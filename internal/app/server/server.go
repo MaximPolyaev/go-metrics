@@ -16,12 +16,23 @@ func createServeMux() *http.ServeMux {
 
 	mux.Handle(
 		updateGaugeAction,
-		conveyor(http.HandlerFunc(gaugeHandler), allowedMethodMiddleware),
+		conveyor(
+			http.StripPrefix(updateGaugeAction, http.HandlerFunc(gaugeHandler)),
+			allowedMethodMiddleware,
+		),
 	)
 
 	mux.Handle(
 		updateCounterAction,
-		conveyor(http.HandlerFunc(counterHandler), allowedMethodMiddleware),
+		conveyor(
+			http.StripPrefix(updateCounterAction, http.HandlerFunc(counterHandler)),
+			allowedMethodMiddleware,
+		),
+	)
+
+	mux.Handle(
+		updateAction,
+		conveyor(http.HandlerFunc(incorrectMetricHandler), allowedMethodMiddleware),
 	)
 
 	return mux

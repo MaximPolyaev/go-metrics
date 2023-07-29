@@ -1,18 +1,31 @@
 package server
 
 import (
-	"io"
 	"net/http"
 )
 
+func incorrectMetricHandler(w http.ResponseWriter, _ *http.Request) {
+	http.Error(w, "Incorrect metric type", http.StatusBadRequest)
+}
+
 func gaugeHandler(w http.ResponseWriter, r *http.Request) {
-	if _, err := io.WriteString(w, "gauge"); err != nil {
-		panic(err)
+	gaugeMetric, err := makeGaugeMetricByUrlPath(r.URL.Path)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
 	}
+
+	getMemStorage().writeGaugeMetric(*gaugeMetric)
 }
 
 func counterHandler(w http.ResponseWriter, r *http.Request) {
-	if _, err := io.WriteString(w, "counter"); err != nil {
-		panic(err)
+	counterMetric, err := makeCounterMetricByUrlPath(r.URL.Path)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
 	}
+
+	getMemStorage().writeCounterMetric(*counterMetric)
 }
