@@ -13,7 +13,7 @@ func IncorrectMetric(w http.ResponseWriter, _ *http.Request) {
 
 func GaugeFunc(s storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		urlPath := strings.Trim(r.URL.Path, "/")
+		urlPath := strings.Trim(r.URL.Path, " ")
 
 		if len(urlPath) == 0 {
 			http.Error(w, "Page not found", http.StatusNotFound)
@@ -33,7 +33,7 @@ func GaugeFunc(s storage.Storage) http.HandlerFunc {
 
 func CounterFunc(s storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		urlPath := strings.Trim(r.URL.Path, "/")
+		urlPath := strings.Trim(r.URL.Path, " ")
 
 		if len(urlPath) == 0 {
 			http.Error(w, "Page not found", http.StatusNotFound)
