@@ -12,7 +12,7 @@ func Run(sPoolInterval int, sReportInterval int, baseUrl string) {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	httpClient := httpclient.NewHttpClient(baseUrl)
+	httpClient := httpclient.NewHTTPClient(baseUrl)
 
 	poolInterval := time.Duration(sPoolInterval) * time.Second
 	reportInterval := time.Duration(sReportInterval) * time.Second

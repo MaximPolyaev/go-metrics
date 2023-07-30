@@ -8,23 +8,23 @@ import (
 	"net/http"
 )
 
-type HttpClient interface {
+type HTTPClient interface {
 	UpdateMetrics(stats *metric.Stats) error
 }
 
 type httpClient struct {
 	client  http.Client
-	baseUrl string
+	baseURL string
 }
 
 const (
 	updateAction = "/update/"
 )
 
-func NewHttpClient(baseUrl string) HttpClient {
+func NewHTTPClient(baseURL string) HTTPClient {
 	return &httpClient{
 		client:  http.Client{},
-		baseUrl: baseUrl,
+		baseURL: baseURL,
 	}
 }
 
@@ -45,7 +45,7 @@ func (c *httpClient) UpdateMetrics(stats *metric.Stats) error {
 }
 
 func (c *httpClient) updateGaugeMetric(name string, value float64) error {
-	url := c.makeUpdateUrl(
+	url := c.makeUpdateURL(
 		metric.GaugeType,
 		name,
 		fmt.Sprintf("%f", value),
@@ -55,7 +55,7 @@ func (c *httpClient) updateGaugeMetric(name string, value float64) error {
 }
 
 func (c *httpClient) updateCounterMetric(name string, value int) error {
-	url := c.makeUpdateUrl(
+	url := c.makeUpdateURL(
 		metric.CounterType,
 		name,
 		fmt.Sprintf("%d", value),
@@ -64,8 +64,8 @@ func (c *httpClient) updateCounterMetric(name string, value int) error {
 	return c.updateMetric(url)
 }
 
-func (c *httpClient) makeUpdateUrl(args ...string) string {
-	url := c.baseUrl + updateAction
+func (c *httpClient) makeUpdateURL(args ...string) string {
+	url := c.baseURL + updateAction
 
 	for _, arg := range args {
 		url += arg + "/"
