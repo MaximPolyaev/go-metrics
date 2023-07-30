@@ -12,7 +12,7 @@ func Run(addr string) error {
 
 func createServeMux() *http.ServeMux {
 	mux := http.NewServeMux()
-	mux.Handle("/", conveyor(createEmptyHandlerFunc(), allowedMethodMiddleware))
+	mux.Handle("/", http.NotFoundHandler())
 
 	mux.Handle(
 		updateGaugeAction,
@@ -44,10 +44,6 @@ func conveyor(h http.Handler, middlewares ...middleware) http.Handler {
 	}
 
 	return h
-}
-
-func createEmptyHandlerFunc() http.HandlerFunc {
-	return func(_ http.ResponseWriter, _ *http.Request) {}
 }
 
 func allowedMethodMiddleware(next http.Handler) http.Handler {

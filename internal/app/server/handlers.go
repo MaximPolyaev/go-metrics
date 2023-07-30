@@ -2,6 +2,7 @@ package server
 
 import (
 	"net/http"
+	"strings"
 )
 
 func incorrectMetricHandler(w http.ResponseWriter, _ *http.Request) {
@@ -9,10 +10,19 @@ func incorrectMetricHandler(w http.ResponseWriter, _ *http.Request) {
 }
 
 func gaugeHandler(w http.ResponseWriter, r *http.Request) {
+	urlPath := r.URL.Path
+
+	urlPath = strings.Trim(urlPath, "/")
+
+	if len(urlPath) == 0 {
+		http.Error(w, "Page not found", http.StatusNotFound)
+		return
+	}
+
 	gaugeMetric, err := makeGaugeMetricByUrlPath(r.URL.Path)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -20,10 +30,19 @@ func gaugeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func counterHandler(w http.ResponseWriter, r *http.Request) {
-	counterMetric, err := makeCounterMetricByUrlPath(r.URL.Path)
+	urlPath := r.URL.Path
+
+	urlPath = strings.Trim(urlPath, "/")
+
+	if len(urlPath) == 0 {
+		http.Error(w, "Page not found", http.StatusNotFound)
+		return
+	}
+
+	counterMetric, err := makeCounterMetricByUrlPath(urlPath)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
