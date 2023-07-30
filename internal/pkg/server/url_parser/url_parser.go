@@ -1,27 +1,13 @@
-package server
+package url_parser
 
 import (
 	"errors"
+	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/metric"
 	"strconv"
 	"strings"
 )
 
-const (
-	metricsGaugeType   = "gauge"
-	metricsCounterType = "counter"
-)
-
-type gaugeMetric struct {
-	name  string
-	value float64
-}
-
-type counterMetric struct {
-	name  string
-	value int
-}
-
-func makeGaugeMetricByURLPath(urlPath string) (*gaugeMetric, error) {
+func MakeGaugeMetricByURLPath(urlPath string) (*metric.Gauge, error) {
 	metricParams, err := urlPathToMetricParamsArr(urlPath)
 	if err != nil {
 		return nil, err
@@ -36,13 +22,13 @@ func makeGaugeMetricByURLPath(urlPath string) (*gaugeMetric, error) {
 		return nil, errors.New("incorrect value, must be float")
 	}
 
-	return &gaugeMetric{
-		name:  name,
-		value: value,
+	return &metric.Gauge{
+		Name:  metric.Name(name),
+		Value: value,
 	}, nil
 }
 
-func makeCounterMetricByURLPath(urlPath string) (*counterMetric, error) {
+func MakeCounterMetricByURLPath(urlPath string) (*metric.Counter, error) {
 	metricParams, err := urlPathToMetricParamsArr(urlPath)
 	if err != nil {
 		return nil, err
@@ -57,9 +43,9 @@ func makeCounterMetricByURLPath(urlPath string) (*counterMetric, error) {
 		return nil, errors.New("incorrect value, must be int")
 	}
 
-	return &counterMetric{
-		name:  name,
-		value: value,
+	return &metric.Counter{
+		Name:  metric.Name(name),
+		Value: value,
 	}, nil
 }
 

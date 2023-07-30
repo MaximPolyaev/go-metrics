@@ -1,23 +1,38 @@
 package server
 
-import "net/http"
+import (
+	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/handler"
+	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/mem_storage"
+	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/metric"
+	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/storage"
+	"net/http"
+)
+
+const (
+	updateAction = "/update/"
+
+	updateGaugeAction   = updateAction + metric.GaugeType + "/"
+	updateCounterAction = updateAction + metric.CounterType + "/"
+)
 
 type middleware func(http.Handler) http.Handler
 
 func Run(addr string) error {
-	mux := createServeMux()
+	s := mem_storage.NewMemStorage()
+
+	mux := createServeMux(s)
 
 	return http.ListenAndServe(addr, mux)
 }
 
-func createServeMux() *http.ServeMux {
+func createServeMux(s storage.Storage) *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.Handle("/", http.NotFoundHandler())
 
 	mux.Handle(
 		updateGaugeAction,
 		conveyor(
-			http.StripPrefix(updateGaugeAction, http.HandlerFunc(gaugeHandler)),
+			http.StripPrefix(updateGaugeAction, handler.GaugeFunc(s)),
 			allowedMethodMiddleware,
 		),
 	)
@@ -25,14 +40,14 @@ func createServeMux() *http.ServeMux {
 	mux.Handle(
 		updateCounterAction,
 		conveyor(
-			http.StripPrefix(updateCounterAction, http.HandlerFunc(counterHandler)),
+			http.StripPrefix(updateCounterAction, handler.CounterFunc(s)),
 			allowedMethodMiddleware,
 		),
 	)
 
 	mux.Handle(
 		updateAction,
-		conveyor(http.HandlerFunc(incorrectMetricHandler), allowedMethodMiddleware),
+		conveyor(http.HandlerFunc(handler.IncorrectMetric), allowedMethodMiddleware),
 	)
 
 	return mux
