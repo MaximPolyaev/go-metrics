@@ -7,12 +7,12 @@ import (
 	"time"
 )
 
-func Run(sPoolInterval int, sReportInterval int, baseUrl string) {
+func Run(sPoolInterval int, sReportInterval int, baseURL string) {
 	var mStats metric.Stats
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	httpClient := httpclient.NewHTTPClient(baseUrl)
+	httpClient := httpclient.NewHTTPClient(baseURL)
 
 	poolInterval := time.Duration(sPoolInterval) * time.Second
 	reportInterval := time.Duration(sReportInterval) * time.Second

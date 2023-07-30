@@ -7,9 +7,9 @@ import (
 const (
 	sPoolInterval   = 2
 	sReportInterval = 10
-	baseUrl         = "http://localhost:8080"
+	baseURL         = "http://localhost:8080"
 )
 
 func main() {
-	agent.Run(sPoolInterval, sReportInterval, baseUrl)
+	agent.Run(sPoolInterval, sReportInterval, baseURL)
 }
