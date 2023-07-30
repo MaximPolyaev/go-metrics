@@ -80,8 +80,6 @@ func (c *httpClient) updateMetric(url string) error {
 		return err
 	}
 
-	fmt.Println(url)
-
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return err
