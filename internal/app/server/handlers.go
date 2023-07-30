@@ -19,7 +19,7 @@ func gaugeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	gaugeMetric, err := makeGaugeMetricByUrlPath(r.URL.Path)
+	gaugeMetric, err := makeGaugeMetricByURLPath(urlPath)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -39,7 +39,7 @@ func counterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	counterMetric, err := makeCounterMetricByUrlPath(urlPath)
+	counterMetric, err := makeCounterMetricByURLPath(urlPath)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
