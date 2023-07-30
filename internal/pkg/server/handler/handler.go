@@ -2,7 +2,7 @@ package handler
 
 import (
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/storage"
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/url_parser"
+	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/urlparser"
 	"net/http"
 	"strings"
 )
@@ -20,7 +20,7 @@ func GaugeFunc(s storage.Storage) http.HandlerFunc {
 			return
 		}
 
-		gaugeMetric, err := url_parser.MakeGaugeMetricByURLPath(urlPath)
+		gaugeMetric, err := urlparser.MakeGaugeMetricByURLPath(urlPath)
 
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -40,7 +40,7 @@ func CounterFunc(s storage.Storage) http.HandlerFunc {
 			return
 		}
 
-		counterMetric, err := url_parser.MakeCounterMetricByURLPath(urlPath)
+		counterMetric, err := urlparser.MakeCounterMetricByURLPath(urlPath)
 
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)

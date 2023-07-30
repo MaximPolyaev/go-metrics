@@ -2,7 +2,7 @@ package server
 
 import (
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/handler"
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/mem_storage"
+	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/memstorage"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/metric"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/storage"
 	"net/http"
@@ -18,7 +18,7 @@ const (
 type middleware func(http.Handler) http.Handler
 
 func Run(addr string) error {
-	s := mem_storage.NewMemStorage()
+	s := memstorage.NewMemStorage()
 
 	mux := createServeMux(s)
 
