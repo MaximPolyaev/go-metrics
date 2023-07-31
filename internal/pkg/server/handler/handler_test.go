@@ -20,39 +20,39 @@ func TestIncorrectMetric(t *testing.T) {
 func TestGaugeFunc(t *testing.T) {
 	tests := []struct {
 		name         string
-		stripUrl     string
+		URL          string
 		expectedCode int
 	}{
 		{
 			name:         "case #1",
-			stripUrl:     "/update/gauge/",
+			URL:          "/update/gauge/",
 			expectedCode: http.StatusNotFound,
 		},
 		{
 			name:         "case #2",
-			stripUrl:     "/update/gauge/test",
+			URL:          "/update/gauge/test",
 			expectedCode: http.StatusBadRequest,
 		},
 		{
 			name:         "case #3",
-			stripUrl:     "/update/gauge/test/test",
+			URL:          "/update/gauge/test/test",
 			expectedCode: http.StatusBadRequest,
 		},
 		{
 			name:         "case #4",
-			stripUrl:     "/update/gauge/test/test/test",
+			URL:          "/update/gauge/test/test/test",
 			expectedCode: http.StatusBadRequest,
 		},
 		{
 			name:         "case #5",
-			stripUrl:     "/update/gauge/test/2",
+			URL:          "/update/gauge/test/2",
 			expectedCode: http.StatusOK,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := httptest.NewRequest(http.MethodPost, tt.stripUrl, nil)
+			r := httptest.NewRequest(http.MethodPost, tt.URL, nil)
 			w := httptest.NewRecorder()
 
 			handler := http.StripPrefix("/update/gauge/", GaugeFunc(memstorage.NewMemStorage()))
@@ -66,39 +66,39 @@ func TestGaugeFunc(t *testing.T) {
 func TestCounterFunc(t *testing.T) {
 	tests := []struct {
 		name         string
-		stripUrl     string
+		URL          string
 		expectedCode int
 	}{
 		{
 			name:         "case #1",
-			stripUrl:     "/update/counter/",
+			URL:          "/update/counter/",
 			expectedCode: http.StatusNotFound,
 		},
 		{
 			name:         "case #2",
-			stripUrl:     "/update/counter/test",
+			URL:          "/update/counter/test",
 			expectedCode: http.StatusBadRequest,
 		},
 		{
 			name:         "case #3",
-			stripUrl:     "/update/counter/test/test",
+			URL:          "/update/counter/test/test",
 			expectedCode: http.StatusBadRequest,
 		},
 		{
 			name:         "case #4",
-			stripUrl:     "/update/counter/test/test/test",
+			URL:          "/update/counter/test/test/test",
 			expectedCode: http.StatusBadRequest,
 		},
 		{
 			name:         "case #5",
-			stripUrl:     "/update/counter/test/2",
+			URL:          "/update/counter/test/2",
 			expectedCode: http.StatusOK,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := httptest.NewRequest(http.MethodPost, tt.stripUrl, nil)
+			r := httptest.NewRequest(http.MethodPost, tt.URL, nil)
 			w := httptest.NewRecorder()
 
 			handler := http.StripPrefix("/update/counter/", CounterFunc(memstorage.NewMemStorage()))
