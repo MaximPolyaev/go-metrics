@@ -8,8 +8,8 @@ import (
 	"testing"
 )
 
-func TestForTest(t *testing.T) {
-	wantUrlReqs := []string{
+func TestUpdateMetrics(t *testing.T) {
+	wantURLReqs := []string{
 		"/update/counter/PoolCount/0/",
 		"/update/gauge/TotalAlloc/0.000000/",
 		"/update/gauge/HeapInuse/0.000000/",
@@ -57,5 +57,5 @@ func TestForTest(t *testing.T) {
 	err := client.UpdateMetrics(&stats)
 	assert.NoError(t, err)
 
-	assert.ElementsMatch(t, wantUrlReqs, urlReqs)
+	assert.ElementsMatch(t, wantURLReqs, urlReqs)
 }
