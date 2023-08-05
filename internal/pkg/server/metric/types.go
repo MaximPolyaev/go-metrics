@@ -1,18 +1,8 @@
 package metric
 
+type Type string
+
 const (
-	GaugeType   = "gauge"
-	CounterType = "counter"
+	GaugeType   = Type("gauge")
+	CounterType = Type("counter")
 )
-
-type Name string
-
-type Gauge struct {
-	Name  Name
-	Value float64
-}
-
-type Counter struct {
-	Name  Name
-	Value int
-}

@@ -1,37 +1,34 @@
 package memstorage
 
-import (
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/metric"
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/storage"
-)
-
-type gaugeMetrics map[metric.Name]metric.Gauge
-type counterMetrics map[metric.Name]metric.Counter
-
-type MemStorage struct {
-	gaugeMetrics   gaugeMetrics
-	counterMetrics counterMetrics
+type MemStorage interface {
+	Set(namespace string, key string, val []byte)
+	Get(category string, key string) (val []byte, ok bool)
+	GetValuesByNamespace(namespace string) (values map[string][]byte, ok bool)
 }
 
-func NewMemStorage() storage.Storage {
-	return MemStorage{
-		gaugeMetrics:   make(gaugeMetrics),
-		counterMetrics: make(counterMetrics),
-	}
+type memStorage struct {
+	values map[string]map[string][]byte
 }
 
-func (s MemStorage) UpdateGaugeMetric(m metric.Gauge) {
-	s.gaugeMetrics[m.Name] = m
+func NewMemStorage() MemStorage {
+	return memStorage{values: make(map[string]map[string][]byte)}
 }
 
-func (s MemStorage) UpdateCounterMetric(m metric.Counter) {
-	existMetric, ok := s.counterMetrics[m.Name]
-
-	if ok {
-		existMetric.Value += m.Value
-		s.counterMetrics[m.Name] = existMetric
-		return
+func (s memStorage) Set(namespace string, key string, val []byte) {
+	if _, ok := s.values[namespace]; !ok {
+		s.values[namespace] = make(map[string][]byte)
 	}
 
-	s.counterMetrics[m.Name] = m
+	s.values[namespace][key] = val
+}
+
+func (s memStorage) Get(namespace string, key string) (val []byte, ok bool) {
+	val, ok = s.values[namespace][key]
+	return
+}
+
+func (s memStorage) GetValuesByNamespace(namespace string) (values map[string][]byte, ok bool) {
+	values, ok = s.values[namespace]
+
+	return
 }

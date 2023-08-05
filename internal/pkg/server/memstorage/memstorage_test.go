@@ -1,85 +1,89 @@
 package memstorage
 
 import (
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/metric"
+	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/encoding"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func TestMemStorage_UpdateGaugeMetric(t *testing.T) {
+func Test_memStorage_Get(t *testing.T) {
+	testBinaryInt := encoding.IntToByte(1)
+
+	s := NewMemStorage()
+	s.Set("ns test", "test key", testBinaryInt)
+
+	type args struct {
+		namespace string
+		key       string
+	}
+
 	tests := []struct {
-		name        string
-		storage     MemStorage
-		gauge       metric.Gauge
-		wantStorage MemStorage
+		name    string
+		args    args
+		wantVal []byte
+		wantOk  bool
 	}{
 		{
-			name:    "empty storage",
-			storage: MemStorage{gaugeMetrics: make(gaugeMetrics), counterMetrics: make(counterMetrics)},
-			gauge:   metric.Gauge{Name: metric.Name("test"), Value: 1},
-			wantStorage: MemStorage{
-				gaugeMetrics:   gaugeMetrics{"test": metric.Gauge{Name: metric.Name("test"), Value: 1}},
-				counterMetrics: make(counterMetrics),
+			name: "test case #1",
+			args: args{
+				namespace: "ns test",
+				key:       "test key",
 			},
+			wantVal: testBinaryInt,
+			wantOk:  true,
 		},
 		{
-			name: "exist metric in storage",
-			storage: MemStorage{
-				gaugeMetrics:   gaugeMetrics{"test": metric.Gauge{Name: metric.Name("test"), Value: 0}},
-				counterMetrics: make(counterMetrics),
+			name: "test case #2",
+			args: args{
+				namespace: "ns test 2",
+				key:       "test key",
 			},
-			gauge: metric.Gauge{Name: metric.Name("test"), Value: 1},
-			wantStorage: MemStorage{
-				gaugeMetrics:   gaugeMetrics{"test": metric.Gauge{Name: metric.Name("test"), Value: 1}},
-				counterMetrics: make(counterMetrics),
-			},
+			wantVal: nil,
+			wantOk:  false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.storage.UpdateGaugeMetric(tt.gauge)
-
-			assert.Equal(t, tt.storage, tt.wantStorage)
+			gotVal, gotOk := s.Get(tt.args.namespace, tt.args.key)
+			assert.Equal(t, tt.wantVal, gotVal)
+			assert.Equal(t, tt.wantOk, gotOk)
 		})
 	}
 }
 
-func TestMemStorage_UpdateCounterMetric(t *testing.T) {
+func Test_memStorage_GetValuesByNamespace(t *testing.T) {
+	testBinaryInt := encoding.IntToByte(1)
+	s := NewMemStorage()
+	s.Set("ns test", "test key", testBinaryInt)
+
 	tests := []struct {
-		name        string
-		storage     MemStorage
-		counter     metric.Counter
-		wantStorage MemStorage
+		name       string
+		namespace  string
+		wantValues map[string][]byte
+		wantOk     bool
 	}{
 		{
-			name:    "empty storage",
-			storage: MemStorage{gaugeMetrics: make(gaugeMetrics), counterMetrics: make(counterMetrics)},
-			counter: metric.Counter{Name: metric.Name("test"), Value: 1},
-			wantStorage: MemStorage{
-				gaugeMetrics:   make(gaugeMetrics),
-				counterMetrics: counterMetrics{"test": metric.Counter{Name: metric.Name("test"), Value: 1}},
-			},
+			name:       "test case #1",
+			namespace:  "not exists",
+			wantValues: map[string][]byte(nil),
+			wantOk:     false,
 		},
 		{
-			name: "exist metric in storage",
-			storage: MemStorage{
-				gaugeMetrics:   make(gaugeMetrics),
-				counterMetrics: counterMetrics{"test": metric.Counter{Name: metric.Name("test"), Value: 1}},
+			name:      "test case #2",
+			namespace: "ns test",
+			wantValues: map[string][]byte{
+				"test key": testBinaryInt,
 			},
-			counter: metric.Counter{Name: metric.Name("test"), Value: 2},
-			wantStorage: MemStorage{
-				gaugeMetrics:   make(gaugeMetrics),
-				counterMetrics: counterMetrics{"test": metric.Counter{Name: metric.Name("test"), Value: 3}},
-			},
+			wantOk: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.storage.UpdateCounterMetric(tt.counter)
-
-			assert.Equal(t, tt.storage, tt.wantStorage)
+			gotValues, gotOk := s.GetValuesByNamespace(tt.namespace)
+			assert.Equal(t, tt.wantValues, gotValues)
+			assert.Equal(t, tt.wantOk, gotOk)
 		})
 	}
 }
