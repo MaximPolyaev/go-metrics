@@ -45,7 +45,7 @@ func MainFunc(s memstorage.MemStorage) http.HandlerFunc {
 		_, err = io.WriteString(w, htmlDocument.AsString())
 
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StatusBadGateway)
 			return
 		}
 	}
@@ -93,5 +93,9 @@ func GetValue(s memstorage.MemStorage) http.HandlerFunc {
 		}
 
 		_, err = io.WriteString(w, metricValue)
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadGateway)
+		}
 	}
 }

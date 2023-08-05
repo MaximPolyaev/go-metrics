@@ -61,10 +61,6 @@ func (mService *gaugeService) GetValue(name string) (value string, ok bool, err 
 
 	floatValue := encoding.Float64FromBytes(binaryValue)
 
-	if err != nil {
-		return
-	}
-
 	value = fmt.Sprintf("%g", floatValue)
 
 	return
