@@ -9,6 +9,7 @@ import (
 type MetricService interface {
 	Update(name string, valStr string) error
 	GetValues() (map[string]string, error)
+	GetValue(name string) (value string, ok bool, err error)
 }
 
 func FactoryMetricService(mType metric.Type, s memstorage.MemStorage) (MetricService, error) {

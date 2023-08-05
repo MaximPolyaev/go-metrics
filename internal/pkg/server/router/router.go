@@ -8,7 +8,9 @@ import (
 
 const (
 	updateAction        = "/update/"
+	valueAction         = "/value/"
 	updateMetricPattern = updateAction + "{type}/{name}/{value}"
+	getMetricPattern    = valueAction + "{type}/{name}"
 )
 
 func CreateRouter(s memstorage.MemStorage) *chi.Mux {
@@ -16,6 +18,8 @@ func CreateRouter(s memstorage.MemStorage) *chi.Mux {
 
 	router.Post(updateMetricPattern, handler.UpdateFunc(s))
 	router.Post(updateMetricPattern+"/", handler.UpdateFunc(s))
+	router.Get(getMetricPattern, handler.GetValue(s))
+	router.Get(getMetricPattern+"/", handler.GetValue(s))
 
 	router.Get("/", handler.MainFunc(s))
 

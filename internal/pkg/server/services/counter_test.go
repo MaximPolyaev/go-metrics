@@ -95,7 +95,6 @@ func Test_counterService_GetValues(t *testing.T) {
 		name    string
 		storage memstorage.MemStorage
 		want    map[string]string
-		wantErr assert.ErrorAssertionFunc
 	}{
 		{
 			name:    "empty storage",
@@ -120,6 +119,53 @@ func Test_counterService_GetValues(t *testing.T) {
 			got, err := updateService.GetValues()
 
 			assert.NoError(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func Test_counterService_GetValue(t *testing.T) {
+	tests := []struct {
+		name    string
+		storage memstorage.MemStorage
+		mName   string
+		ok      bool
+		want    string
+		wantErr bool
+	}{
+		{
+			name:    "empty storage",
+			storage: memstorage.NewMemStorage(),
+			mName:   "not exist",
+			ok:      false,
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name:    "not empty storage",
+			storage: MakeStorageWithCounterValue(),
+			mName:   "test",
+			ok:      true,
+			want:    "10",
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mService := &counterService{
+				s: tt.storage,
+			}
+
+			got, ok, err := mService.GetValue(tt.mName)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			assert.Equal(t, tt.ok, ok)
 			assert.Equal(t, tt.want, got)
 		})
 	}

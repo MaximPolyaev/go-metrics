@@ -69,3 +69,29 @@ func UpdateFunc(s memstorage.MemStorage) http.HandlerFunc {
 		}
 	}
 }
+
+func GetValue(s memstorage.MemStorage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		mType := metric.Type(chi.URLParam(r, "type"))
+		metricService, err := services.FactoryMetricService(mType, s)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		name := chi.URLParam(r, "name")
+
+		metricValue, ok, err := metricService.GetValue(name)
+
+		if err != nil {
+			if ok {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+			} else {
+				http.Error(w, err.Error(), http.StatusNotFound)
+			}
+			return
+		}
+
+		_, err = io.WriteString(w, metricValue)
+	}
+}

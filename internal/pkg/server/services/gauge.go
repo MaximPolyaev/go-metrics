@@ -13,7 +13,7 @@ type gaugeService struct {
 	s memstorage.MemStorage
 }
 
-func (updateService *gaugeService) Update(name string, valStr string) error {
+func (mService *gaugeService) Update(name string, valStr string) error {
 	if len(name) == 0 {
 		return errors.New("metric name must be not empty")
 	}
@@ -29,13 +29,13 @@ func (updateService *gaugeService) Update(name string, valStr string) error {
 		return err
 	}
 
-	updateService.s.Set(string(metric.GaugeType), name, valBytes)
+	mService.s.Set(string(metric.GaugeType), name, valBytes)
 
 	return nil
 }
 
-func (updateService *gaugeService) GetValues() (map[string]string, error) {
-	valuesBytes, ok := updateService.s.GetValuesByNamespace(string(metric.GaugeType))
+func (mService *gaugeService) GetValues() (map[string]string, error) {
+	valuesBytes, ok := mService.s.GetValuesByNamespace(string(metric.GaugeType))
 
 	values := make(map[string]string)
 
@@ -46,8 +46,26 @@ func (updateService *gaugeService) GetValues() (map[string]string, error) {
 	for k, valueBytes := range valuesBytes {
 		value := encoding.Float64FromBytes(valueBytes)
 
-		values[k] = fmt.Sprintf("%f", value)
+		values[k] = fmt.Sprintf("%g", value)
 	}
 
 	return values, nil
+}
+
+func (mService *gaugeService) GetValue(name string) (value string, ok bool, err error) {
+	binaryValue, ok := mService.s.Get(string(metric.GaugeType), name)
+
+	if !ok {
+		return "", ok, errors.New("metric " + name + " not found")
+	}
+
+	floatValue := encoding.Float64FromBytes(binaryValue)
+
+	if err != nil {
+		return
+	}
+
+	value = fmt.Sprintf("%g", floatValue)
+
+	return
 }
