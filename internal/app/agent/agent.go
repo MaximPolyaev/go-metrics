@@ -1,15 +1,22 @@
 package agent
 
 import (
+	"github.com/MaximPolyaev/go-metrics/internal/pkg/agent/env"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/agent/flags"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/agent/httpclient"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/agent/metric"
+	"log"
 	"sync"
 	"time"
 )
 
 func Run() {
-	f := flags.ParseFlags()
+	e, err := env.ParseEnv()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	f := flags.ParseFlags(e)
 
 	var mStats metric.Stats
 	var wg sync.WaitGroup
@@ -33,7 +40,7 @@ func Run() {
 			<-time.After(reportInterval)
 
 			if err := httpClient.UpdateMetrics(&mStats); err != nil {
-				panic(err)
+				log.Fatalln(err)
 			}
 		}
 	}()

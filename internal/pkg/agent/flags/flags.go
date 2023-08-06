@@ -2,6 +2,7 @@ package flags
 
 import (
 	"flag"
+	"github.com/MaximPolyaev/go-metrics/internal/pkg/agent/env"
 	"unicode/utf8"
 )
 
@@ -29,12 +30,26 @@ func (f *flags) GetPollInterval() int {
 	return f.pollInterval
 }
 
-func ParseFlags() Flags {
+func ParseFlags(env env.Env) Flags {
 	f := flags{}
 
-	flag.StringVar(&f.addr, "a", "http://localhost:8080", "http server addr")
-	flag.IntVar(&f.reportInterval, "r", 10, "report interval")
-	flag.IntVar(&f.pollInterval, "p", 2, "poll interval")
+	if env.GetAddr() == nil {
+		flag.StringVar(&f.addr, "a", "http://localhost:8080", "http server addr")
+	} else {
+		f.addr = *env.GetAddr()
+	}
+
+	if env.GetReportInterval() == nil {
+		flag.IntVar(&f.reportInterval, "r", 10, "report interval")
+	} else {
+		f.reportInterval = *env.GetReportInterval()
+	}
+
+	if env.GetPollInterval() == nil {
+		flag.IntVar(&f.pollInterval, "p", 2, "poll interval")
+	} else {
+		f.pollInterval = *env.GetPollInterval()
+	}
 
 	flag.Parse()
 
