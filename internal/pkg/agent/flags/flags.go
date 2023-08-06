@@ -1,6 +1,9 @@
 package flags
 
-import "flag"
+import (
+	"flag"
+	"unicode/utf8"
+)
 
 type Flags interface {
 	GetAddr() string
@@ -35,5 +38,15 @@ func ParseFlags() Flags {
 
 	flag.Parse()
 
+	f.addr = normalizeAddr(f.addr)
+
 	return &f
+}
+
+func normalizeAddr(addr string) string {
+	if utf8.RuneCountInString(addr) < 4 || addr[:4] != "http" {
+		return "http://" + addr
+	}
+
+	return addr
 }
