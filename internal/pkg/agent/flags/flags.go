@@ -29,7 +29,7 @@ func (f *flags) GetPollInterval() int {
 func ParseFlags() Flags {
 	f := flags{}
 
-	flag.StringVar(&f.addr, "a", "localhost:8080", "http server addr")
+	flag.StringVar(&f.addr, "a", "http://localhost:8080", "http server addr")
 	flag.IntVar(&f.reportInterval, "r", 10, "report interval")
 	flag.IntVar(&f.pollInterval, "p", 2, "poll interval")
 
