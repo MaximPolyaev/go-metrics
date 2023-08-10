@@ -3,7 +3,7 @@ package server
 import (
 	"net/http"
 
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/agent/env"
+	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/env"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/flags"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/memstorage"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/router"

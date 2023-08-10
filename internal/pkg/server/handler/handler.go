@@ -25,7 +25,7 @@ func MainFunc(s memstorage.MemStorage) http.HandlerFunc {
 			return
 		}
 
-		list := ""
+		var list string
 
 		for _, mService := range []services.MetricService{gaugeService, counterService} {
 			values, err := mService.GetValues()

@@ -3,7 +3,7 @@ package flags
 import (
 	"flag"
 
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/agent/env"
+	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/env"
 )
 
 type Flags interface {
