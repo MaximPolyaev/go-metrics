@@ -5,38 +5,48 @@ import (
 	"net/http"
 
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/html"
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/memstorage"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/metric"
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/services"
 	"github.com/go-chi/chi/v5"
 )
 
-func MainFunc(s memstorage.MemStorage) http.HandlerFunc {
+type Handler struct {
+	metricService metricService
+}
+
+type metricService interface {
+	Update(mType metric.Type, name string, value string) error
+	GetValues(mType metric.Type) (map[string]string, error)
+	GetValue(mType metric.Type, name string) (value string, ok bool, err error)
+}
+
+func New(mService metricService) Handler {
+	return Handler{
+		metricService: mService,
+	}
+}
+
+func (h *Handler) MainFunc() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		gaugeService, err := services.FactoryMetricService(metric.GaugeType, s)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		counterService, err := services.FactoryMetricService(metric.CounterType, s)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
 		var list string
 
-		for _, mService := range []services.MetricService{gaugeService, counterService} {
-			values, err := mService.GetValues()
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
-			}
+		values, err := h.metricService.GetValues(metric.GaugeType)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 
-			for k, v := range values {
-				list += html.Li(k + ": " + v)
-			}
+		for k, v := range values {
+			list += html.Li(k + ": " + v)
+		}
+
+		values, err = h.metricService.GetValues(metric.CounterType)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		for k, v := range values {
+			list += html.Li(k + ": " + v)
 		}
 
 		htmlDocument := html.NewDocument()
@@ -51,37 +61,24 @@ func MainFunc(s memstorage.MemStorage) http.HandlerFunc {
 	}
 }
 
-func UpdateFunc(s memstorage.MemStorage) http.HandlerFunc {
+func (h *Handler) UpdateFunc() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		mType := metric.Type(chi.URLParam(r, "type"))
-		updateService, err := services.FactoryMetricService(mType, s)
-
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
 		name := chi.URLParam(r, "name")
 		valueStr := chi.URLParam(r, "value")
 
-		if err := updateService.Update(name, valueStr); err != nil {
+		if err := h.metricService.Update(mType, name, valueStr); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
 	}
 }
 
-func GetValue(s memstorage.MemStorage) http.HandlerFunc {
+func (h *Handler) GetValueFunc() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		mType := metric.Type(chi.URLParam(r, "type"))
-		metricService, err := services.FactoryMetricService(mType, s)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
 		name := chi.URLParam(r, "name")
 
-		metricValue, ok, err := metricService.GetValue(name)
+		metricValue, ok, err := h.metricService.GetValue(mType, name)
 
 		if err != nil {
 			if ok {

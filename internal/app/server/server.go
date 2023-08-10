@@ -1,11 +1,13 @@
 package server
 
 import (
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/config"
 	"net/http"
 
+	"github.com/MaximPolyaev/go-metrics/internal/pkg/config"
+	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/handler"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/memstorage"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/router"
+	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/services/metricservice"
 )
 
 func Run() error {
@@ -14,9 +16,12 @@ func Run() error {
 		return err
 	}
 
-	s := memstorage.NewMemStorage()
+	store := memstorage.New()
+	metricService := metricservice.New(store)
 
-	muxRouter := router.CreateRouter(s)
+	handlers := handler.New(&metricService)
+
+	muxRouter := router.CreateRouter(&handlers)
 
 	return http.ListenAndServe(*cfg.Addr, muxRouter)
 }

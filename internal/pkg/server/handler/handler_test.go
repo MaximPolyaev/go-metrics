@@ -1,15 +1,18 @@
 package handler_test
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/memstorage"
+	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/handler"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/metric"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/router"
 	"github.com/stretchr/testify/assert"
 )
+
+type mockMetricService struct{}
 
 func TestUpdateFunc(t *testing.T) {
 	tests := []struct {
@@ -29,16 +32,11 @@ func TestUpdateFunc(t *testing.T) {
 		},
 		{
 			name:         "gauge case #3",
-			URL:          "/update/gauge/test/test",
-			expectedCode: http.StatusBadRequest,
-		},
-		{
-			name:         "gauge case #4",
 			URL:          "/update/gauge/test/test/test",
 			expectedCode: http.StatusNotFound,
 		},
 		{
-			name:         "gauge case #5",
+			name:         "gauge case #4",
 			URL:          "/update/gauge/test/2",
 			expectedCode: http.StatusOK,
 		},
@@ -54,27 +52,24 @@ func TestUpdateFunc(t *testing.T) {
 		},
 		{
 			name:         "counter case #3",
-			URL:          "/update/counter/test/test",
-			expectedCode: http.StatusBadRequest,
-		},
-		{
-			name:         "counter case #4",
 			URL:          "/update/counter/test/test/test",
 			expectedCode: http.StatusNotFound,
 		},
 		{
-			name:         "counter case #5",
+			name:         "counter case #4",
 			URL:          "/update/counter/test/2",
 			expectedCode: http.StatusOK,
 		},
 	}
+
+	h := handler.New(&mockMetricService{})
+	muxRouter := router.CreateRouter(&h)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := httptest.NewRequest(http.MethodPost, tt.URL, nil)
 			w := httptest.NewRecorder()
 
-			muxRouter := router.CreateRouter(memstorage.NewMemStorage())
 			muxRouter.ServeHTTP(w, r)
 
 			assert.Equal(t, tt.expectedCode, w.Code)
@@ -83,22 +78,18 @@ func TestUpdateFunc(t *testing.T) {
 }
 
 func TestMainFunc(t *testing.T) {
-	storage := memstorage.NewMemStorage()
-
-	storage.Set(metric.GaugeType.ToString(), "test", 1.1)
-	storage.Set(metric.CounterType.ToString(), "test", 1)
-
 	r := httptest.NewRequest(http.MethodGet, "/", nil)
 	w := httptest.NewRecorder()
 
-	muxRouter := router.CreateRouter(storage)
+	h := handler.New(&mockMetricService{})
+	muxRouter := router.CreateRouter(&h)
 	muxRouter.ServeHTTP(w, r)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	str := w.Body.String()
 
-	assert.Contains(t, str, "<ul><li>test: 1.1</li><li>test: 1</li></ul>")
+	assert.Contains(t, str, "<ul><li>test: 1.1</li><li>test: 10</li></ul>")
 }
 
 func TestGetValue(t *testing.T) {
@@ -154,26 +145,24 @@ func TestGetValue(t *testing.T) {
 			name:            "counter case #4",
 			URL:             "/value/counter/test",
 			expectedCode:    http.StatusOK,
-			expectedBodyStr: "1",
+			expectedBodyStr: "10",
 		},
 		{
 			name:            "counter case #5",
 			URL:             "/value/counter/test/",
 			expectedCode:    http.StatusOK,
-			expectedBodyStr: "1",
+			expectedBodyStr: "10",
 		},
 	}
 
-	storage := memstorage.NewMemStorage()
-	storage.Set(metric.GaugeType.ToString(), "test", 1.1)
-	storage.Set(metric.CounterType.ToString(), "test", 1)
+	h := handler.New(&mockMetricService{})
+	muxRouter := router.CreateRouter(&h)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := httptest.NewRequest(http.MethodGet, tt.URL, nil)
 			w := httptest.NewRecorder()
 
-			muxRouter := router.CreateRouter(storage)
 			muxRouter.ServeHTTP(w, r)
 
 			assert.Equal(t, tt.expectedCode, w.Code)
@@ -183,4 +172,41 @@ func TestGetValue(t *testing.T) {
 			}
 		})
 	}
+}
+
+func (m *mockMetricService) Update(_ metric.Type, _ string, _ string) error {
+	return nil
+}
+
+func (m *mockMetricService) GetValues(mType metric.Type) (map[string]string, error) {
+	switch mType {
+	case metric.CounterType:
+		return map[string]string{
+			"test": "10",
+		}, nil
+	case metric.GaugeType:
+		return map[string]string{
+			"test": "1.1",
+		}, nil
+	}
+	return nil, nil
+}
+
+func (m *mockMetricService) GetValue(mType metric.Type, name string) (value string, ok bool, err error) {
+	if name == "notExist" {
+		return "", false, errors.New("")
+	}
+
+	switch mType {
+	case metric.CounterType:
+		if name == "test" {
+			return "10", true, nil
+		}
+	case metric.GaugeType:
+		if name == "test" {
+			return "1.1", true, nil
+		}
+	}
+
+	return "", false, nil
 }

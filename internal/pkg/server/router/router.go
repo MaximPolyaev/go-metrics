@@ -1,8 +1,8 @@
 package router
 
 import (
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/handler"
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/memstorage"
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
 )
 
@@ -13,15 +13,21 @@ const (
 	getMetricPattern    = valueAction + "{type}/{name}"
 )
 
-func CreateRouter(s memstorage.MemStorage) *chi.Mux {
+type handler interface {
+	UpdateFunc() http.HandlerFunc
+	GetValueFunc() http.HandlerFunc
+	MainFunc() http.HandlerFunc
+}
+
+func CreateRouter(h handler) *chi.Mux {
 	router := chi.NewRouter()
 
-	router.Post(updateMetricPattern, handler.UpdateFunc(s))
-	router.Post(updateMetricPattern+"/", handler.UpdateFunc(s))
-	router.Get(getMetricPattern, handler.GetValue(s))
-	router.Get(getMetricPattern+"/", handler.GetValue(s))
+	router.Post(updateMetricPattern, h.UpdateFunc())
+	router.Post(updateMetricPattern+"/", h.UpdateFunc())
+	router.Get(getMetricPattern, h.GetValueFunc())
+	router.Get(getMetricPattern+"/", h.GetValueFunc())
 
-	router.Get("/", handler.MainFunc(s))
+	router.Get("/", h.MainFunc())
 
 	return router
 }

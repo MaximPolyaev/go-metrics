@@ -7,7 +7,7 @@ import (
 )
 
 func Test_memStorage_Get(t *testing.T) {
-	s := NewMemStorage()
+	s := New()
 	s.Set("ns test", "test key", 1)
 
 	type args struct {
@@ -51,7 +51,7 @@ func Test_memStorage_Get(t *testing.T) {
 }
 
 func Test_memStorage_GetValuesByNamespace(t *testing.T) {
-	s := NewMemStorage()
+	s := New()
 	s.Set("ns test", "test key", 1)
 
 	tests := []struct {
