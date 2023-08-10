@@ -85,8 +85,8 @@ func TestUpdateFunc(t *testing.T) {
 func TestMainFunc(t *testing.T) {
 	storage := memstorage.NewMemStorage()
 
-	storage.Set(string(metric.GaugeType), "test", 1.1)
-	storage.Set(string(metric.CounterType), "test", 1)
+	storage.Set(metric.GaugeType.ToString(), "test", 1.1)
+	storage.Set(metric.CounterType.ToString(), "test", 1)
 
 	r := httptest.NewRequest(http.MethodGet, "/", nil)
 	w := httptest.NewRecorder()
@@ -165,8 +165,8 @@ func TestGetValue(t *testing.T) {
 	}
 
 	storage := memstorage.NewMemStorage()
-	storage.Set(string(metric.GaugeType), "test", 1.1)
-	storage.Set(string(metric.CounterType), "test", 1)
+	storage.Set(metric.GaugeType.ToString(), "test", 1.1)
+	storage.Set(metric.CounterType.ToString(), "test", 1)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

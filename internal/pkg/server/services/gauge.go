@@ -24,13 +24,13 @@ func (s *gaugeService) Update(name string, valStr string) error {
 		return errors.New("incorrect value, must be float")
 	}
 
-	s.storage.Set(string(metric.GaugeType), name, value)
+	s.storage.Set(metric.GaugeType.ToString(), name, value)
 
 	return nil
 }
 
 func (s *gaugeService) GetValues() (map[string]string, error) {
-	values, ok := s.storage.GetValuesByNamespace(string(metric.GaugeType))
+	values, ok := s.storage.GetValuesByNamespace(metric.GaugeType.ToString())
 
 	strValues := make(map[string]string)
 
@@ -46,7 +46,7 @@ func (s *gaugeService) GetValues() (map[string]string, error) {
 }
 
 func (s *gaugeService) GetValue(name string) (strValue string, ok bool, err error) {
-	value, ok := s.storage.Get(string(metric.GaugeType), name)
+	value, ok := s.storage.Get(metric.GaugeType.ToString(), name)
 
 	if !ok {
 		return "", ok, errors.New("metric " + name + " not found")

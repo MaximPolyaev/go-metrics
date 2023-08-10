@@ -182,7 +182,7 @@ func Test_gaugeService_GetValue(t *testing.T) {
 
 func MakeStorageWithGaugeValue() memstorage.MemStorage {
 	storage := memstorage.NewMemStorage()
-	storage.Set(string(metric.GaugeType), "test", 1.1)
+	storage.Set(metric.GaugeType.ToString(), "test", 1.1)
 
 	return storage
 }

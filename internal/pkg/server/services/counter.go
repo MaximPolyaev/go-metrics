@@ -23,7 +23,7 @@ func (s *counterService) Update(name string, valStr string) error {
 		return errors.New("incorrect value, must be int")
 	}
 
-	sCategory := string(metric.CounterType)
+	sCategory := metric.CounterType.ToString()
 
 	existValue, ok := s.storage.Get(sCategory, name)
 
@@ -37,7 +37,7 @@ func (s *counterService) Update(name string, valStr string) error {
 }
 
 func (s *counterService) GetValues() (map[string]string, error) {
-	values, ok := s.storage.GetValuesByNamespace(string(metric.CounterType))
+	values, ok := s.storage.GetValuesByNamespace(metric.CounterType.ToString())
 
 	strValues := make(map[string]string)
 
@@ -53,7 +53,7 @@ func (s *counterService) GetValues() (map[string]string, error) {
 }
 
 func (s *counterService) GetValue(name string) (strValue string, ok bool, err error) {
-	value, ok := s.storage.Get(string(metric.CounterType), name)
+	value, ok := s.storage.Get(metric.CounterType.ToString(), name)
 
 	if !ok {
 		return "", ok, errors.New("metric " + name + " not found")

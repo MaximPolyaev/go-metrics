@@ -171,7 +171,7 @@ func Test_counterService_GetValue(t *testing.T) {
 
 func MakeStorageWithCounterValue() memstorage.MemStorage {
 	storage := memstorage.NewMemStorage()
-	storage.Set(string(metric.CounterType), "test", 10)
+	storage.Set(metric.CounterType.ToString(), "test", 10)
 
 	return storage
 }
