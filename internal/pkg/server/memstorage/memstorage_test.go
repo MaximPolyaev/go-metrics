@@ -3,15 +3,12 @@ package memstorage
 import (
 	"testing"
 
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/encoding"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_memStorage_Get(t *testing.T) {
-	testBinaryInt := encoding.IntToByte(1)
-
 	s := NewMemStorage()
-	s.Set("ns test", "test key", testBinaryInt)
+	s.Set("ns test", "test key", 1)
 
 	type args struct {
 		namespace string
@@ -21,7 +18,7 @@ func Test_memStorage_Get(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		wantVal []byte
+		wantVal interface{}
 		wantOk  bool
 	}{
 		{
@@ -30,7 +27,7 @@ func Test_memStorage_Get(t *testing.T) {
 				namespace: "ns test",
 				key:       "test key",
 			},
-			wantVal: testBinaryInt,
+			wantVal: 1,
 			wantOk:  true,
 		},
 		{
@@ -54,27 +51,26 @@ func Test_memStorage_Get(t *testing.T) {
 }
 
 func Test_memStorage_GetValuesByNamespace(t *testing.T) {
-	testBinaryInt := encoding.IntToByte(1)
 	s := NewMemStorage()
-	s.Set("ns test", "test key", testBinaryInt)
+	s.Set("ns test", "test key", 1)
 
 	tests := []struct {
 		name       string
 		namespace  string
-		wantValues map[string][]byte
+		wantValues map[string]interface{}
 		wantOk     bool
 	}{
 		{
 			name:       "test case #1",
 			namespace:  "not exists",
-			wantValues: map[string][]byte(nil),
+			wantValues: map[string]interface{}(nil),
 			wantOk:     false,
 		},
 		{
 			name:      "test case #2",
 			namespace: "ns test",
-			wantValues: map[string][]byte{
-				"test key": testBinaryInt,
+			wantValues: map[string]interface{}{
+				"test key": 1,
 			},
 			wantOk: true,
 		},

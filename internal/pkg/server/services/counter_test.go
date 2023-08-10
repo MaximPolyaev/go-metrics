@@ -3,7 +3,6 @@ package services
 import (
 	"testing"
 
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/encoding"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/memstorage"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/metric"
 	"github.com/stretchr/testify/assert"
@@ -74,18 +73,16 @@ func Test_counterService_Update(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			updateService := &counterService{
+			s := &counterService{
 				storage: storage,
 			}
 
-			err := updateService.Update(tt.args.name, tt.args.valStr)
+			err := s.Update(tt.args.name, tt.args.valStr)
 
 			if tt.wantErr {
 				assert.Error(t, err)
-			}
-
-			if err := updateService.Update(tt.args.name, tt.args.valStr); (err != nil) != tt.wantErr {
-				t.Errorf("Update() error = %v, wantErr %v", err, tt.wantErr)
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -174,7 +171,7 @@ func Test_counterService_GetValue(t *testing.T) {
 
 func MakeStorageWithCounterValue() memstorage.MemStorage {
 	storage := memstorage.NewMemStorage()
-	storage.Set(string(metric.CounterType), "test", encoding.IntToByte(10))
+	storage.Set(string(metric.CounterType), "test", 10)
 
 	return storage
 }

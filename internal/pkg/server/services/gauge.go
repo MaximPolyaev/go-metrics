@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/encoding"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/memstorage"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/metric"
 )
@@ -25,44 +24,35 @@ func (s *gaugeService) Update(name string, valStr string) error {
 		return errors.New("incorrect value, must be float")
 	}
 
-	valBytes, err := encoding.Float64ToByte(value)
-	if err != nil {
-		return err
-	}
-
-	s.storage.Set(string(metric.GaugeType), name, valBytes)
+	s.storage.Set(string(metric.GaugeType), name, value)
 
 	return nil
 }
 
 func (s *gaugeService) GetValues() (map[string]string, error) {
-	valuesBytes, ok := s.storage.GetValuesByNamespace(string(metric.GaugeType))
+	values, ok := s.storage.GetValuesByNamespace(string(metric.GaugeType))
 
-	values := make(map[string]string)
+	strValues := make(map[string]string)
 
 	if !ok {
-		return values, nil
+		return strValues, nil
 	}
 
-	for k, valueBytes := range valuesBytes {
-		value := encoding.Float64FromBytes(valueBytes)
-
-		values[k] = fmt.Sprintf("%g", value)
+	for k, value := range values {
+		strValues[k] = fmt.Sprintf("%g", value.(float64))
 	}
 
-	return values, nil
+	return strValues, nil
 }
 
-func (s *gaugeService) GetValue(name string) (value string, ok bool, err error) {
-	binaryValue, ok := s.storage.Get(string(metric.GaugeType), name)
+func (s *gaugeService) GetValue(name string) (strValue string, ok bool, err error) {
+	value, ok := s.storage.Get(string(metric.GaugeType), name)
 
 	if !ok {
 		return "", ok, errors.New("metric " + name + " not found")
 	}
 
-	floatValue := encoding.Float64FromBytes(binaryValue)
-
-	value = fmt.Sprintf("%g", floatValue)
+	strValue = fmt.Sprintf("%g", value.(float64))
 
 	return
 }

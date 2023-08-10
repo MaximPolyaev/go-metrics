@@ -5,7 +5,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/encoding"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/memstorage"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/metric"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/router"
@@ -86,13 +85,8 @@ func TestUpdateFunc(t *testing.T) {
 func TestMainFunc(t *testing.T) {
 	storage := memstorage.NewMemStorage()
 
-	binaryF, err := encoding.Float64ToByte(1.1)
-	assert.NoError(t, err)
-
-	binaryI := encoding.IntToByte(1)
-
-	storage.Set(string(metric.GaugeType), "test", binaryF)
-	storage.Set(string(metric.CounterType), "test", binaryI)
+	storage.Set(string(metric.GaugeType), "test", 1.1)
+	storage.Set(string(metric.CounterType), "test", 1)
 
 	r := httptest.NewRequest(http.MethodGet, "/", nil)
 	w := httptest.NewRecorder()
@@ -170,14 +164,9 @@ func TestGetValue(t *testing.T) {
 		},
 	}
 
-	binaryF, err := encoding.Float64ToByte(1.1)
-	assert.NoError(t, err)
-
-	binaryInt := encoding.IntToByte(1)
-
 	storage := memstorage.NewMemStorage()
-	storage.Set(string(metric.GaugeType), "test", binaryF)
-	storage.Set(string(metric.CounterType), "test", binaryInt)
+	storage.Set(string(metric.GaugeType), "test", 1.1)
+	storage.Set(string(metric.CounterType), "test", 1)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

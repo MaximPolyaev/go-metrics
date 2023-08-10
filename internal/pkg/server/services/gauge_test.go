@@ -3,7 +3,6 @@ package services
 import (
 	"testing"
 
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/encoding"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/memstorage"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/metric"
 	"github.com/stretchr/testify/assert"
@@ -113,7 +112,7 @@ func Test_gaugeService_GetValues(t *testing.T) {
 		},
 		{
 			name:    "not empty storage",
-			storage: MakeStorageWithGaugeValue(t),
+			storage: MakeStorageWithGaugeValue(),
 			want: map[string]string{
 				"test": "1.1",
 			},
@@ -153,7 +152,7 @@ func Test_gaugeService_GetValue(t *testing.T) {
 		},
 		{
 			name:    "not empty storage",
-			storage: MakeStorageWithGaugeValue(t),
+			storage: MakeStorageWithGaugeValue(),
 			mName:   "test",
 			ok:      true,
 			want:    "1.1",
@@ -181,14 +180,9 @@ func Test_gaugeService_GetValue(t *testing.T) {
 	}
 }
 
-func MakeStorageWithGaugeValue(t *testing.T) memstorage.MemStorage {
+func MakeStorageWithGaugeValue() memstorage.MemStorage {
 	storage := memstorage.NewMemStorage()
-
-	f, err := encoding.Float64ToByte(1.1)
-
-	assert.NoError(t, err)
-
-	storage.Set(string(metric.GaugeType), "test", f)
+	storage.Set(string(metric.GaugeType), "test", 1.1)
 
 	return storage
 }
