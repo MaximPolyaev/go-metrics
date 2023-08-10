@@ -12,29 +12,24 @@ const (
 `
 )
 
-type Document interface {
-	AsString() string
-	SetBody(string)
-}
-
-type document struct {
+type Document struct {
 	start string
 	body  string
 	end   string
 }
 
-func NewDocument() Document {
-	return &document{
+func NewDocument() *Document {
+	return &Document{
 		start: start,
 		end:   end,
 	}
 }
 
-func (d *document) SetBody(body string) {
+func (d *Document) SetBody(body string) {
 	d.body = body
 }
 
-func (d *document) AsString() string {
+func (d *Document) AsString() string {
 	return d.start + d.body + d.end
 }
 

@@ -9,11 +9,7 @@ import (
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/agent/metric"
 )
 
-type HTTPClient interface {
-	UpdateMetrics(stats *metric.Stats) error
-}
-
-type httpClient struct {
+type HttpClient struct {
 	client  http.Client
 	baseURL string
 }
@@ -22,14 +18,14 @@ const (
 	updateAction = "/update/"
 )
 
-func NewHTTPClient(baseURL string) HTTPClient {
-	return &httpClient{
+func NewHTTPClient(baseURL string) *HttpClient {
+	return &HttpClient{
 		client:  http.Client{},
 		baseURL: baseURL,
 	}
 }
 
-func (c *httpClient) UpdateMetrics(stats *metric.Stats) error {
+func (c *HttpClient) UpdateMetrics(stats *metric.Stats) error {
 	for k, v := range stats.GetCounterMap() {
 		if err := c.updateCounterMetric(k, v); err != nil {
 			return err
@@ -45,7 +41,7 @@ func (c *httpClient) UpdateMetrics(stats *metric.Stats) error {
 	return nil
 }
 
-func (c *httpClient) updateGaugeMetric(name string, value float64) error {
+func (c *HttpClient) updateGaugeMetric(name string, value float64) error {
 	url := c.makeUpdateURL(
 		metric.GaugeType,
 		name,
@@ -55,7 +51,7 @@ func (c *httpClient) updateGaugeMetric(name string, value float64) error {
 	return c.updateMetric(url)
 }
 
-func (c *httpClient) updateCounterMetric(name string, value int) error {
+func (c *HttpClient) updateCounterMetric(name string, value int) error {
 	url := c.makeUpdateURL(
 		metric.CounterType,
 		name,
@@ -65,7 +61,7 @@ func (c *httpClient) updateCounterMetric(name string, value int) error {
 	return c.updateMetric(url)
 }
 
-func (c *httpClient) makeUpdateURL(args ...string) string {
+func (c *HttpClient) makeUpdateURL(args ...string) string {
 	url := c.baseURL + updateAction
 
 	for _, arg := range args {
@@ -75,7 +71,7 @@ func (c *httpClient) makeUpdateURL(args ...string) string {
 	return url
 }
 
-func (c *httpClient) updateMetric(url string) error {
+func (c *HttpClient) updateMetric(url string) error {
 	req, err := c.makeRequest(url)
 	if err != nil {
 		return err
@@ -105,7 +101,7 @@ func (c *httpClient) updateMetric(url string) error {
 	return nil
 }
 
-func (c *httpClient) makeRequest(url string) (*http.Request, error) {
+func (c *HttpClient) makeRequest(url string) (*http.Request, error) {
 	req, err := http.NewRequest(http.MethodPost, url, nil)
 	if err != nil {
 		return nil, err

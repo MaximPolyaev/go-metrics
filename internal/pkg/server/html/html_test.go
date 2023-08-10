@@ -83,7 +83,7 @@ func Test_document_AsString(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := &document{
+			d := &Document{
 				start: tt.fields.start,
 				body:  tt.fields.body,
 				end:   tt.fields.end,
