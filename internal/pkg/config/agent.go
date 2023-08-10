@@ -21,30 +21,22 @@ func (cfg *Agent) Parse() error {
 		return err
 	}
 
-	var isNeedParse bool
-
 	if cfg.Addr == nil {
 		cfg.Addr = new(string)
 		flag.StringVar(cfg.Addr, "a", "http://localhost:8080", "http server addr")
-
-		isNeedParse = true
 	}
 
 	if cfg.ReportInterval == nil {
 		cfg.ReportInterval = new(int)
 		flag.IntVar(cfg.ReportInterval, "r", 10, "report interval")
-		isNeedParse = true
 	}
 
 	if cfg.PollInterval == nil {
 		cfg.PollInterval = new(int)
 		flag.IntVar(cfg.PollInterval, "p", 2, "poll interval")
-		isNeedParse = true
 	}
 
-	if isNeedParse {
-		flag.Parse()
-	}
+	flag.Parse()
 
 	*cfg.Addr = normalizeAddr(*cfg.Addr)
 
