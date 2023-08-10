@@ -5,28 +5,25 @@ import (
 	"sync"
 	"time"
 
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/agent/env"
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/agent/flags"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/agent/httpclient"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/agent/metric"
+	"github.com/MaximPolyaev/go-metrics/internal/pkg/config"
 )
 
 func Run() {
-	e, err := env.ParseEnv()
-	if err != nil {
+	cfg := config.NewAgent()
+	if err := cfg.Parse(); err != nil {
 		log.Fatalln(err)
 	}
-
-	f := flags.ParseFlags(e)
 
 	var mStats metric.Stats
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	httpClient := httpclient.NewHTTPClient(f.GetAddr())
+	httpClient := httpclient.NewHTTPClient(*cfg.Addr)
 
-	poolInterval := time.Duration(f.GetPollInterval()) * time.Second
-	reportInterval := time.Duration(f.GetReportInterval()) * time.Second
+	poolInterval := time.Duration(*cfg.PollInterval) * time.Second
+	reportInterval := time.Duration(*cfg.ReportInterval) * time.Second
 
 	go func() {
 		for {
