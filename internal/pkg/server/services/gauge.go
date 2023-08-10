@@ -3,10 +3,11 @@ package services
 import (
 	"errors"
 	"fmt"
+	"strconv"
+
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/encoding"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/memstorage"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/metric"
-	"strconv"
 )
 
 type gaugeService struct {

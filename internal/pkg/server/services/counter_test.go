@@ -1,11 +1,12 @@
 package services
 
 import (
+	"testing"
+
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/encoding"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/memstorage"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/metric"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func Test_counterService_Update(t *testing.T) {

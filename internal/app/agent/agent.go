@@ -1,13 +1,14 @@
 package agent
 
 import (
+	"log"
+	"sync"
+	"time"
+
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/agent/env"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/agent/flags"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/agent/httpclient"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/agent/metric"
-	"log"
-	"sync"
-	"time"
 )
 
 func Run() {

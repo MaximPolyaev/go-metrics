@@ -2,8 +2,9 @@ package flags
 
 import (
 	"flag"
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/agent/env"
 	"unicode/utf8"
+
+	"github.com/MaximPolyaev/go-metrics/internal/pkg/agent/env"
 )
 
 type Flags interface {

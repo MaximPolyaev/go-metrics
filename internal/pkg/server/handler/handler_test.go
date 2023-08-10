@@ -1,14 +1,15 @@
 package handler_test
 
 import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/encoding"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/memstorage"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/metric"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/router"
 	"github.com/stretchr/testify/assert"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 )
 
 func TestUpdateFunc(t *testing.T) {

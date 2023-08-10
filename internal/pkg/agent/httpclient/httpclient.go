@@ -3,9 +3,10 @@ package httpclient
 import (
 	"errors"
 	"fmt"
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/agent/metric"
 	"io"
 	"net/http"
+
+	"github.com/MaximPolyaev/go-metrics/internal/pkg/agent/metric"
 )
 
 type HTTPClient interface {

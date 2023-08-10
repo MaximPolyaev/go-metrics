@@ -2,6 +2,7 @@ package flags
 
 import (
 	"flag"
+
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/agent/env"
 )
 

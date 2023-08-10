@@ -1,9 +1,10 @@
 package memstorage
 
 import (
+	"testing"
+
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/encoding"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func Test_memStorage_Get(t *testing.T) {

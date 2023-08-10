@@ -1,13 +1,13 @@
 package handler
 
 import (
+	"io"
+	"net/http"
+
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/html"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/memstorage"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/metric"
 	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/services"
-	"io"
-	"net/http"
-
 	"github.com/go-chi/chi/v5"
 )
 

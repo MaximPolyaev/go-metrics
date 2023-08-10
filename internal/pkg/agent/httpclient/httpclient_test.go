@@ -1,11 +1,12 @@
 package httpclient
 
 import (
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/agent/metric"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/MaximPolyaev/go-metrics/internal/pkg/agent/metric"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestUpdateMetrics(t *testing.T) {
