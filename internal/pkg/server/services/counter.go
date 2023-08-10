@@ -11,10 +11,10 @@ import (
 )
 
 type counterService struct {
-	s memstorage.MemStorage
+	storage memstorage.MemStorage
 }
 
-func (mService *counterService) Update(name string, valStr string) error {
+func (s *counterService) Update(name string, valStr string) error {
 	if len(name) == 0 {
 		return errors.New("metric name must be not empty")
 	}
@@ -27,7 +27,7 @@ func (mService *counterService) Update(name string, valStr string) error {
 
 	sCategory := string(metric.CounterType)
 
-	existValueAsBytes, ok := mService.s.Get(sCategory, name)
+	existValueAsBytes, ok := s.storage.Get(sCategory, name)
 
 	if ok {
 		existValue, err := encoding.IntFromBytes(existValueAsBytes)
@@ -38,13 +38,13 @@ func (mService *counterService) Update(name string, valStr string) error {
 		value += existValue
 	}
 
-	mService.s.Set(sCategory, name, encoding.IntToByte(value))
+	s.storage.Set(sCategory, name, encoding.IntToByte(value))
 
 	return nil
 }
 
-func (mService *counterService) GetValues() (map[string]string, error) {
-	valuesBytes, ok := mService.s.GetValuesByNamespace(string(metric.CounterType))
+func (s *counterService) GetValues() (map[string]string, error) {
+	valuesBytes, ok := s.storage.GetValuesByNamespace(string(metric.CounterType))
 
 	values := make(map[string]string)
 
@@ -65,8 +65,8 @@ func (mService *counterService) GetValues() (map[string]string, error) {
 	return values, nil
 }
 
-func (mService *counterService) GetValue(name string) (value string, ok bool, err error) {
-	binaryValue, ok := mService.s.Get(string(metric.CounterType), name)
+func (s *counterService) GetValue(name string) (value string, ok bool, err error) {
+	binaryValue, ok := s.storage.Get(string(metric.CounterType), name)
 
 	if !ok {
 		return "", ok, errors.New("metric " + name + " not found")

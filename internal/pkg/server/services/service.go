@@ -16,9 +16,9 @@ type MetricService interface {
 func FactoryMetricService(mType metric.Type, s memstorage.MemStorage) (MetricService, error) {
 	switch mType {
 	case metric.GaugeType:
-		return &gaugeService{s: s}, nil
+		return &gaugeService{storage: s}, nil
 	case metric.CounterType:
-		return &counterService{s: s}, nil
+		return &counterService{storage: s}, nil
 	}
 
 	return nil, errors.New("invalid metric type")

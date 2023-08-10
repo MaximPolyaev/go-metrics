@@ -75,7 +75,7 @@ func Test_counterService_Update(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			updateService := &counterService{
-				s: storage,
+				storage: storage,
 			}
 
 			err := updateService.Update(tt.args.name, tt.args.valStr)
@@ -114,7 +114,7 @@ func Test_counterService_GetValues(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			updateService := &counterService{
-				s: tt.storage,
+				storage: tt.storage,
 			}
 
 			got, err := updateService.GetValues()
@@ -155,7 +155,7 @@ func Test_counterService_GetValue(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mService := &counterService{
-				s: tt.storage,
+				storage: tt.storage,
 			}
 
 			got, ok, err := mService.GetValue(tt.mName)

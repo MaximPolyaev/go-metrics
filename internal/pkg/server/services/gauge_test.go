@@ -83,7 +83,7 @@ func Test_gaugeService_Update(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			updateService := &gaugeService{
-				s: storage,
+				storage: storage,
 			}
 
 			err := updateService.Update(tt.args.name, tt.args.valStr)
@@ -123,7 +123,7 @@ func Test_gaugeService_GetValues(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			updateService := &gaugeService{
-				s: tt.storage,
+				storage: tt.storage,
 			}
 
 			got, err := updateService.GetValues()
@@ -164,7 +164,7 @@ func Test_gaugeService_GetValue(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mService := &gaugeService{
-				s: tt.storage,
+				storage: tt.storage,
 			}
 
 			got, ok, err := mService.GetValue(tt.mName)
