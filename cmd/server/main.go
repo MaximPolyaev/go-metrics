@@ -17,7 +17,7 @@ func main() {
 }
 
 func run() error {
-	cfg := config.NewServer()
+	cfg := config.NewAddressConfig()
 	if err := cfg.Parse(); err != nil {
 		return err
 	}

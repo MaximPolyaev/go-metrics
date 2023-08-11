@@ -7,17 +7,40 @@ import (
 	"github.com/caarlos0/env/v9"
 )
 
-type Agent struct {
-	Addr           *string `env:"ADDRESS"`
-	ReportInterval *int    `env:"REPORT_INTERVAL"`
-	PollInterval   *int    `env:"POLL_INTERVAL"`
+type AddressConfig struct {
+	Addr *string `env:"ADDRESS"`
 }
 
-func NewAgent() Agent {
-	return Agent{}
+type BaseConfig struct {
+	AddressConfig
+
+	ReportInterval *int `env:"REPORT_INTERVAL"`
+	PollInterval   *int `env:"POLL_INTERVAL"`
 }
 
-func (cfg *Agent) Parse() error {
+func NewAddressConfig() AddressConfig {
+	return AddressConfig{}
+}
+
+func NewBaseConfig() BaseConfig {
+	return BaseConfig{}
+}
+
+func (cfg *AddressConfig) Parse() error {
+	if err := env.Parse(cfg); err != nil {
+		return err
+	}
+
+	if cfg.Addr == nil {
+		cfg.Addr = new(string)
+		flag.StringVar(cfg.Addr, "a", ":8080", "http server addr")
+		flag.Parse()
+	}
+
+	return nil
+}
+
+func (cfg *BaseConfig) Parse() error {
 	if err := env.Parse(cfg); err != nil {
 		return err
 	}

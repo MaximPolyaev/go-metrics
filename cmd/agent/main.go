@@ -15,7 +15,7 @@ func main() {
 }
 
 func run() {
-	cfg := config.NewAgent()
+	cfg := config.NewBaseConfig()
 	if err := cfg.Parse(); err != nil {
 		log.Fatalln(err)
 	}
