@@ -63,7 +63,7 @@ func TestUpdateFunc(t *testing.T) {
 	}
 
 	h := handler.New(&mockMetricService{})
-	muxRouter := router.CreateRouter(&h)
+	muxRouter := router.CreateRouter(h)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -82,7 +82,7 @@ func TestMainFunc(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	h := handler.New(&mockMetricService{})
-	muxRouter := router.CreateRouter(&h)
+	muxRouter := router.CreateRouter(h)
 	muxRouter.ServeHTTP(w, r)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -156,7 +156,7 @@ func TestGetValue(t *testing.T) {
 	}
 
 	h := handler.New(&mockMetricService{})
-	muxRouter := router.CreateRouter(&h)
+	muxRouter := router.CreateRouter(h)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

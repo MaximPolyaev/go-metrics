@@ -24,10 +24,8 @@ func run() error {
 
 	store := memstorage.New()
 	metricService := metricservice.New(store)
-
-	handlers := handler.New(&metricService)
-
-	muxRouter := router.CreateRouter(&handlers)
+	h := handler.New(metricService)
+	muxRouter := router.CreateRouter(h)
 
 	return http.ListenAndServe(*cfg.Addr, muxRouter)
 }

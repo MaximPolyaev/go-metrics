@@ -18,8 +18,8 @@ type memStorage interface {
 	GetValuesByNamespace(namespace string) (values map[string]interface{}, ok bool)
 }
 
-func New(s memStorage) MetricService {
-	return MetricService{
+func New(s memStorage) *MetricService {
+	return &MetricService{
 		storage: s,
 	}
 }

@@ -19,8 +19,8 @@ type metricService interface {
 	GetValue(mType metric.Type, name string) (value string, ok bool, err error)
 }
 
-func New(mService metricService) Handler {
-	return Handler{
+func New(mService metricService) *Handler {
+	return &Handler{
 		metricService: mService,
 	}
 }
