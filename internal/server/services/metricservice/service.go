@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/metric"
+	"github.com/MaximPolyaev/go-metrics/internal/server/metric"
 )
 
 type MetricService struct {

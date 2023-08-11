@@ -2,8 +2,9 @@ package config
 
 import (
 	"flag"
-	"github.com/caarlos0/env/v9"
 	"unicode/utf8"
+
+	"github.com/caarlos0/env/v9"
 )
 
 type Agent struct {

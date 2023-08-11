@@ -3,11 +3,11 @@ package main
 import (
 	"net/http"
 
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/config"
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/handler"
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/memstorage"
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/router"
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/services/metricservice"
+	"github.com/MaximPolyaev/go-metrics/internal/config"
+	"github.com/MaximPolyaev/go-metrics/internal/server/handler"
+	"github.com/MaximPolyaev/go-metrics/internal/server/memstorage"
+	"github.com/MaximPolyaev/go-metrics/internal/server/router"
+	"github.com/MaximPolyaev/go-metrics/internal/server/services/metricservice"
 )
 
 func main() {

@@ -6,7 +6,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/agent/metric"
+	"github.com/MaximPolyaev/go-metrics/internal/agent/metric"
 )
 
 type HTTPClient struct {

@@ -5,9 +5,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/agent/httpclient"
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/agent/metric"
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/config"
+	"github.com/MaximPolyaev/go-metrics/internal/agent/httpclient"
+	"github.com/MaximPolyaev/go-metrics/internal/agent/metric"
+	"github.com/MaximPolyaev/go-metrics/internal/config"
 )
 
 func main() {

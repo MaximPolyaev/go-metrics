@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/agent/metric"
+	"github.com/MaximPolyaev/go-metrics/internal/agent/metric"
 	"github.com/stretchr/testify/assert"
 )
 

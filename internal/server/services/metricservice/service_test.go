@@ -3,8 +3,7 @@ package metricservice
 import (
 	"testing"
 
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/memstorage"
-	"github.com/MaximPolyaev/go-metrics/internal/pkg/server/metric"
+	"github.com/MaximPolyaev/go-metrics/internal/server/metric"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -159,13 +158,11 @@ func TestMetricService_Update(t *testing.T) {
 func TestMetricService_GetValues(t *testing.T) {
 	tests := []struct {
 		name       string
-		storage    memstorage.MemStorage
 		metricType metric.Type
 		want       map[string]string
 	}{
 		{
 			name:       "counter values",
-			storage:    memstorage.New(),
 			metricType: metric.CounterType,
 			want: map[string]string{
 				"test": "10",
@@ -173,7 +170,6 @@ func TestMetricService_GetValues(t *testing.T) {
 		},
 		{
 			name:       "gauge values",
-			storage:    memstorage.New(),
 			metricType: metric.GaugeType,
 			want: map[string]string{
 				"test": "1.1",
