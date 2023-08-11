@@ -1,20 +1,22 @@
 package main
 
 import (
-	"log"
-	"sync"
-	"time"
-
+	"context"
 	"github.com/MaximPolyaev/go-metrics/internal/agent/httpclient"
 	"github.com/MaximPolyaev/go-metrics/internal/agent/metric"
+	"github.com/MaximPolyaev/go-metrics/internal/agent/services/stats"
 	"github.com/MaximPolyaev/go-metrics/internal/config"
+	"log"
+	"sync"
 )
 
 func main() {
-	run()
+	if err := run(); err != nil {
+		log.Fatalln(err)
+	}
 }
 
-func run() {
+func run() (err error) {
 	cfg := config.NewBaseConfig()
 	if err := cfg.Parse(); err != nil {
 		log.Fatalln(err)
@@ -24,28 +26,25 @@ func run() {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
+	ctx, cancel := context.WithCancel(context.Background())
 	httpClient := httpclient.NewHTTPClient(*cfg.Addr)
+	statsService := stats.New(ctx, httpClient)
 
-	poolInterval := time.NewTicker(time.Duration(*cfg.PollInterval) * time.Second)
-	reportInterval := time.NewTicker(time.Duration(*cfg.ReportInterval) * time.Second)
-
-	go func() {
-		for {
-			<-poolInterval.C
-
-			metric.ReadStats(&mStats)
-		}
-	}()
+	go statsService.Pool(*cfg.PollInterval, &mStats)
 
 	go func() {
 		for {
-			<-reportInterval.C
+			err = statsService.Report(*cfg.ReportInterval, &mStats)
 
-			if err := httpClient.UpdateMetrics(&mStats); err != nil {
-				log.Fatalln(err)
+			if err != nil {
+				wg.Done()
+				break
 			}
 		}
 	}()
 
 	wg.Wait()
+	cancel()
+
+	return
 }
