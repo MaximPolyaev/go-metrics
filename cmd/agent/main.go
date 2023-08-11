@@ -26,12 +26,12 @@ func run() {
 
 	httpClient := httpclient.NewHTTPClient(*cfg.Addr)
 
-	poolInterval := time.Duration(*cfg.PollInterval) * time.Second
-	reportInterval := time.Duration(*cfg.ReportInterval) * time.Second
+	poolInterval := time.NewTicker(time.Duration(*cfg.PollInterval) * time.Second)
+	reportInterval := time.NewTicker(time.Duration(*cfg.ReportInterval) * time.Second)
 
 	go func() {
 		for {
-			<-time.After(poolInterval)
+			<-poolInterval.C
 
 			metric.ReadStats(&mStats)
 		}
@@ -39,7 +39,7 @@ func run() {
 
 	go func() {
 		for {
-			<-time.After(reportInterval)
+			<-reportInterval.C
 
 			if err := httpClient.UpdateMetrics(&mStats); err != nil {
 				log.Fatalln(err)
