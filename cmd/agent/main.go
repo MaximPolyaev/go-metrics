@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"sync"
 	"time"
 
 	"github.com/MaximPolyaev/go-metrics/internal/agent/httpclient"
@@ -23,38 +22,20 @@ func run() error {
 	}
 
 	var mStats metric.Stats
-	var wg sync.WaitGroup
 
 	httpClient := httpclient.NewHTTPClient(*cfg.Addr)
 
 	poolInterval := time.NewTicker(time.Duration(*cfg.PollInterval) * time.Second)
 	reportInterval := time.NewTicker(time.Duration(*cfg.ReportInterval) * time.Second)
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-
-		for {
-			<-poolInterval.C
-
+	for {
+		select {
+		case <-poolInterval.C:
 			metric.ReadStats(&mStats)
-		}
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-
-		for {
-			<-reportInterval.C
-
+		case <-reportInterval.C:
 			if err := httpClient.UpdateMetrics(&mStats); err != nil {
 				log.Println(err)
 			}
 		}
-	}()
-
-	wg.Wait()
-
-	return nil
+	}
 }
