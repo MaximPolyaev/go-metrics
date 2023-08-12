@@ -22,7 +22,6 @@ func run() {
 
 	var mStats metric.Stats
 	var wg sync.WaitGroup
-	wg.Add(1)
 
 	httpClient := httpclient.NewHTTPClient(*cfg.Addr)
 
@@ -30,6 +29,9 @@ func run() {
 	reportInterval := time.NewTicker(time.Duration(*cfg.ReportInterval) * time.Second)
 
 	go func() {
+		defer wg.Done()
+		wg.Add(1)
+
 		for {
 			<-poolInterval.C
 
@@ -38,11 +40,14 @@ func run() {
 	}()
 
 	go func() {
+		defer wg.Done()
+		wg.Add(1)
+
 		for {
 			<-reportInterval.C
 
 			if err := httpClient.UpdateMetrics(&mStats); err != nil {
-				panic(err)
+				log.Println(err)
 			}
 		}
 	}()
