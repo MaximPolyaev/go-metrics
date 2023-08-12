@@ -31,20 +31,18 @@ func run() {
 
 	go func() {
 		for {
-			select {
-			case <-poolInterval.C:
-				metric.ReadStats(&mStats)
-			}
+			<-poolInterval.C
+
+			metric.ReadStats(&mStats)
 		}
 	}()
 
 	go func() {
 		for {
-			select {
-			case <-reportInterval.C:
-				if err := httpClient.UpdateMetrics(&mStats); err != nil {
-					log.Fatalln(err)
-				}
+			<-reportInterval.C
+
+			if err := httpClient.UpdateMetrics(&mStats); err != nil {
+				panic(err)
 			}
 		}
 	}()
