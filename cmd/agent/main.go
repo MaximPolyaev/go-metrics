@@ -11,13 +11,15 @@ import (
 )
 
 func main() {
-	run()
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 }
 
-func run() {
+func run() error {
 	cfg := config.NewBaseConfig()
 	if err := cfg.Parse(); err != nil {
-		log.Fatalln(err)
+		return err
 	}
 
 	var mStats metric.Stats
@@ -28,9 +30,9 @@ func run() {
 	poolInterval := time.NewTicker(time.Duration(*cfg.PollInterval) * time.Second)
 	reportInterval := time.NewTicker(time.Duration(*cfg.ReportInterval) * time.Second)
 
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		wg.Add(1)
 
 		for {
 			<-poolInterval.C
@@ -39,9 +41,9 @@ func run() {
 		}
 	}()
 
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		wg.Add(1)
 
 		for {
 			<-reportInterval.C
@@ -53,4 +55,6 @@ func run() {
 	}()
 
 	wg.Wait()
+
+	return nil
 }
