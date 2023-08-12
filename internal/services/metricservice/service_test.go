@@ -3,7 +3,7 @@ package metricservice
 import (
 	"testing"
 
-	"github.com/MaximPolyaev/go-metrics/internal/server/metric"
+	"github.com/MaximPolyaev/go-metrics/internal/metric"
 	"github.com/stretchr/testify/assert"
 )
 

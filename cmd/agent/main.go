@@ -4,9 +4,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/MaximPolyaev/go-metrics/internal/agent/httpclient"
-	"github.com/MaximPolyaev/go-metrics/internal/agent/metric"
 	"github.com/MaximPolyaev/go-metrics/internal/config"
+	"github.com/MaximPolyaev/go-metrics/internal/httpclient"
+	"github.com/MaximPolyaev/go-metrics/internal/metric"
 )
 
 func main() {

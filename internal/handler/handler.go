@@ -4,8 +4,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/MaximPolyaev/go-metrics/internal/server/html"
-	"github.com/MaximPolyaev/go-metrics/internal/server/metric"
+	"github.com/MaximPolyaev/go-metrics/internal/html"
+	"github.com/MaximPolyaev/go-metrics/internal/metric"
 	"github.com/go-chi/chi/v5"
 )
 

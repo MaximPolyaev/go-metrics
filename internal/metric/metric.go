@@ -5,6 +5,13 @@ import (
 	"runtime"
 )
 
+type Type string
+
+const (
+	GaugeType   = Type("gauge")
+	CounterType = Type("counter")
+)
+
 type GaugeMap map[string]float64
 type CounterMap map[string]int
 
@@ -14,10 +21,9 @@ type Stats struct {
 	RandomValue int
 }
 
-const (
-	GaugeType   = "gauge"
-	CounterType = "counter"
-)
+func (t Type) ToString() string {
+	return string(t)
+}
 
 func ReadStats(stats *Stats) {
 	runtime.ReadMemStats(&stats.MemStats)

@@ -2,13 +2,13 @@ package handler_test
 
 import (
 	"errors"
-	"github.com/MaximPolyaev/go-metrics/internal/server/handler"
-	"github.com/MaximPolyaev/go-metrics/internal/server/metric"
-	"github.com/MaximPolyaev/go-metrics/internal/server/router"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/MaximPolyaev/go-metrics/internal/handler"
+	"github.com/MaximPolyaev/go-metrics/internal/metric"
+	"github.com/MaximPolyaev/go-metrics/internal/router"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -6,7 +6,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/MaximPolyaev/go-metrics/internal/agent/metric"
+	"github.com/MaximPolyaev/go-metrics/internal/metric"
 )
 
 type HTTPClient struct {
@@ -43,7 +43,7 @@ func (c *HTTPClient) UpdateMetrics(stats *metric.Stats) error {
 
 func (c *HTTPClient) updateGaugeMetric(name string, value float64) error {
 	url := c.makeUpdateURL(
-		metric.GaugeType,
+		metric.GaugeType.ToString(),
 		name,
 		fmt.Sprintf("%f", value),
 	)
@@ -53,7 +53,7 @@ func (c *HTTPClient) updateGaugeMetric(name string, value float64) error {
 
 func (c *HTTPClient) updateCounterMetric(name string, value int) error {
 	url := c.makeUpdateURL(
-		metric.CounterType,
+		metric.CounterType.ToString(),
 		name,
 		fmt.Sprintf("%d", value),
 	)
