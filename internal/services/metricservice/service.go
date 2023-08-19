@@ -42,6 +42,26 @@ func (s *MetricService) Update(mm *metric.Metrics) *metric.Metrics {
 	return mm
 }
 
+func (s *MetricService) Get(mm *metric.Metrics) *metric.Metrics {
+	value, ok := s.storage.Get(mm.MType.ToString(), mm.ID)
+	if !ok {
+		mm.Delta = nil
+		mm.Value = nil
+		return mm
+	}
+
+	switch mm.MType {
+	case metric.GaugeType:
+		mm.Value = new(float64)
+		*mm.Value = value.(float64)
+	case metric.CounterType:
+		mm.Delta = new(int64)
+		*mm.Delta = value.(int64)
+	}
+
+	return mm
+}
+
 func (s *MetricService) GetValues(mType metric.Type) (map[string]string, error) {
 	switch mType {
 	case metric.GaugeType:

@@ -43,6 +43,14 @@ func (m *Metrics) Validate() error {
 		return err
 	}
 
+	return nil
+}
+
+func (m *Metrics) ValidateWithValue() error {
+	if err := m.Validate(); err != nil {
+		return err
+	}
+
 	switch m.MType {
 	case CounterType:
 		if m.Delta == nil {

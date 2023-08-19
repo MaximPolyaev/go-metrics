@@ -18,6 +18,7 @@ type metricService interface {
 	GetValues(mType metric.Type) (map[string]string, error)
 	GetValue(mType metric.Type, name string) (value string, ok bool, err error)
 	Update(mm *metric.Metrics) *metric.Metrics
+	Get(mm *metric.Metrics) *metric.Metrics
 }
 
 func New(mService metricService) *Handler {
@@ -88,7 +89,7 @@ func (h *Handler) UpdateFunc() http.HandlerFunc {
 			mm.Delta = &value
 		}
 
-		if err := mm.Validate(); err != nil {
+		if err := mm.ValidateWithValue(); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}

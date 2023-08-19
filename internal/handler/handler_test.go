@@ -1,7 +1,6 @@
 package handler_test
 
 import (
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -9,12 +8,9 @@ import (
 
 	"github.com/MaximPolyaev/go-metrics/internal/handler"
 	"github.com/MaximPolyaev/go-metrics/internal/logger"
-	"github.com/MaximPolyaev/go-metrics/internal/metric"
 	"github.com/MaximPolyaev/go-metrics/internal/router"
 	"github.com/stretchr/testify/assert"
 )
-
-type mockMetricService struct{}
 
 func TestHandler_UpdateFunc(t *testing.T) {
 	tests := []struct {
@@ -175,41 +171,4 @@ func TestHandler_GetValue(t *testing.T) {
 			}
 		})
 	}
-}
-
-func (m *mockMetricService) Update(_ *metric.Metrics) *metric.Metrics {
-	return nil
-}
-
-func (m *mockMetricService) GetValues(mType metric.Type) (map[string]string, error) {
-	switch mType {
-	case metric.CounterType:
-		return map[string]string{
-			"test": "10",
-		}, nil
-	case metric.GaugeType:
-		return map[string]string{
-			"test": "1.1",
-		}, nil
-	}
-	return nil, nil
-}
-
-func (m *mockMetricService) GetValue(mType metric.Type, name string) (value string, ok bool, err error) {
-	if name == "notExist" {
-		return "", false, errors.New("")
-	}
-
-	switch mType {
-	case metric.CounterType:
-		if name == "test" {
-			return "10", true, nil
-		}
-	case metric.GaugeType:
-		if name == "test" {
-			return "1.1", true, nil
-		}
-	}
-
-	return "", false, nil
 }
