@@ -89,10 +89,8 @@ func (h *Handler) UpdateFunc() http.HandlerFunc {
 		}
 
 		if err := mm.Validate(); err != nil {
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
-			}
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		}
 
 		h.metricService.Update(&mm)
