@@ -18,7 +18,7 @@ func TestReadStats(t *testing.T) {
 func TestStats_GetGaugeMap(t *testing.T) {
 	stats := Stats{}
 
-	assert.Len(t, stats.GetGaugeMap(), 27)
+	assert.Len(t, stats.GetGaugeMap(), 28)
 }
 
 func TestStats_GetCounterMap(t *testing.T) {

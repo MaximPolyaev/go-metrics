@@ -42,6 +42,7 @@ func (s *Stats) GetGaugeMap() GaugeMap {
 		"MSpanInuse":    float64(s.MSpanInuse),
 		"MSpanSys":      float64(s.MSpanSys),
 		"Mallocs":       float64(s.Mallocs),
+		"Frees":         float64(s.Frees),
 		"NextGC":        float64(s.NextGC),
 		"NumForcedGC":   float64(s.NumForcedGC),
 		"NumGC":         float64(s.NumGC),
@@ -57,6 +58,6 @@ func (s *Stats) GetGaugeMap() GaugeMap {
 
 func (s *Stats) GetCounterMap() CounterMap {
 	return CounterMap{
-		"PoolCount": s.PollCount,
+		"PollCount": s.PollCount,
 	}
 }

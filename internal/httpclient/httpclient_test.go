@@ -11,7 +11,7 @@ import (
 
 func TestUpdateMetrics(t *testing.T) {
 	wantURLReqs := []string{
-		"/update/counter/PoolCount/0/",
+		"/update/counter/PollCount/0/",
 		"/update/gauge/TotalAlloc/0.000000/",
 		"/update/gauge/HeapInuse/0.000000/",
 		"/update/gauge/HeapSys/0.000000/",
@@ -23,6 +23,7 @@ func TestUpdateMetrics(t *testing.T) {
 		"/update/gauge/NextGC/0.000000/",
 		"/update/gauge/HeapIdle/0.000000/",
 		"/update/gauge/Mallocs/0.000000/",
+		"/update/gauge/Frees/0.000000/",
 		"/update/gauge/PauseTotalNs/0.000000/",
 		"/update/gauge/HeapObjects/0.000000/",
 		"/update/gauge/HeapReleased/0.000000/",
