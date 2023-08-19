@@ -34,6 +34,15 @@ func (t Type) Validate() error {
 	return errors.New("invalid metric type: " + t.ToString())
 }
 
+func (m *Metrics) ValueInit() {
+	switch m.MType {
+	case CounterType:
+		m.Delta = new(int64)
+	case GaugeType:
+		m.Value = new(float64)
+	}
+}
+
 func (m *Metrics) Validate() error {
 	if len(m.ID) == 0 {
 		return errors.New("metric ID must be not empty")

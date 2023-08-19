@@ -28,7 +28,7 @@ func CreateRouter(h handler, log *logger.Logger) *chi.Mux {
 	router := chi.NewRouter()
 
 	router.Use(middleware.WithLogging(log))
-	router.Use(chimiddleware.RedirectSlashes)
+	router.Use(chimiddleware.StripSlashes)
 
 	router.Post(updatePattern, h.UpdateByJSONFunc())
 	router.Post(valuePattern, h.GetValueByJSONFunc())

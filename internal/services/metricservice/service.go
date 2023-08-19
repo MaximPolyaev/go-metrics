@@ -43,19 +43,18 @@ func (s *MetricService) Update(mm *metric.Metrics) *metric.Metrics {
 }
 
 func (s *MetricService) Get(mm *metric.Metrics) *metric.Metrics {
+	mm.ValueInit()
+
 	value, ok := s.storage.Get(mm.MType.ToString(), mm.ID)
+
 	if !ok {
-		mm.Delta = nil
-		mm.Value = nil
 		return mm
 	}
 
 	switch mm.MType {
 	case metric.GaugeType:
-		mm.Value = new(float64)
 		*mm.Value = value.(float64)
 	case metric.CounterType:
-		mm.Delta = new(int64)
 		*mm.Delta = value.(int64)
 	}
 
