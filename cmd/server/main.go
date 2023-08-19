@@ -3,9 +3,11 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/MaximPolyaev/go-metrics/internal/config"
 	"github.com/MaximPolyaev/go-metrics/internal/handler"
+	"github.com/MaximPolyaev/go-metrics/internal/logger"
 	"github.com/MaximPolyaev/go-metrics/internal/memstorage"
 	"github.com/MaximPolyaev/go-metrics/internal/router"
 	"github.com/MaximPolyaev/go-metrics/internal/services/metricservice"
@@ -25,8 +27,11 @@ func run() error {
 
 	store := memstorage.New()
 	metricService := metricservice.New(store)
+
 	h := handler.New(metricService)
-	muxRouter := router.CreateRouter(h)
+	lg := logger.New(os.Stdout)
+
+	muxRouter := router.CreateRouter(h, lg)
 
 	return http.ListenAndServe(*cfg.Addr, muxRouter)
 }

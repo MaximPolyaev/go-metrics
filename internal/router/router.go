@@ -3,6 +3,8 @@ package router
 import (
 	"net/http"
 
+	"github.com/MaximPolyaev/go-metrics/internal/logger"
+	"github.com/MaximPolyaev/go-metrics/internal/middleware"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -19,8 +21,10 @@ type handler interface {
 	MainFunc() http.HandlerFunc
 }
 
-func CreateRouter(h handler) *chi.Mux {
+func CreateRouter(h handler, log *logger.Logger) *chi.Mux {
 	router := chi.NewRouter()
+
+	router.Use(middleware.WithLogging(log))
 
 	router.Post(updateMetricPattern, h.UpdateFunc())
 	router.Post(updateMetricPattern+"/", h.UpdateFunc())
