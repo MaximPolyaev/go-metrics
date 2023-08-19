@@ -4,9 +4,11 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/MaximPolyaev/go-metrics/internal/handler"
+	"github.com/MaximPolyaev/go-metrics/internal/logger"
 	"github.com/MaximPolyaev/go-metrics/internal/metric"
 	"github.com/MaximPolyaev/go-metrics/internal/router"
 	"github.com/stretchr/testify/assert"
@@ -63,7 +65,8 @@ func TestUpdateFunc(t *testing.T) {
 	}
 
 	h := handler.New(&mockMetricService{})
-	muxRouter := router.CreateRouter(h)
+	lg := logger.New(os.Stdout)
+	muxRouter := router.CreateRouter(h, lg)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -82,7 +85,8 @@ func TestMainFunc(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	h := handler.New(&mockMetricService{})
-	muxRouter := router.CreateRouter(h)
+	lg := logger.New(os.Stdout)
+	muxRouter := router.CreateRouter(h, lg)
 	muxRouter.ServeHTTP(w, r)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -156,7 +160,8 @@ func TestGetValue(t *testing.T) {
 	}
 
 	h := handler.New(&mockMetricService{})
-	muxRouter := router.CreateRouter(h)
+	lg := logger.New(os.Stdout)
+	muxRouter := router.CreateRouter(h, lg)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
