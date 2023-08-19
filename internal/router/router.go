@@ -6,30 +6,32 @@ import (
 	"github.com/MaximPolyaev/go-metrics/internal/logger"
 	"github.com/MaximPolyaev/go-metrics/internal/middleware"
 	"github.com/go-chi/chi/v5"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
 )
 
 const (
-	updateAction        = "/update/"
-	valueAction         = "/value/"
-	updateMetricPattern = updateAction + "{type}/{name}/{value}"
-	getMetricPattern    = valueAction + "{type}/{name}"
+	updatePattern       = "/update"
+	valuePattern        = "/value"
+	updateMetricPattern = updatePattern + "/{type}/{name}/{value}"
+	getMetricPattern    = valuePattern + "/{type}/{name}"
 )
 
 type handler interface {
 	UpdateFunc() http.HandlerFunc
 	GetValueFunc() http.HandlerFunc
 	MainFunc() http.HandlerFunc
+	UpdateByJsonFunc() http.HandlerFunc
 }
 
 func CreateRouter(h handler, log *logger.Logger) *chi.Mux {
 	router := chi.NewRouter()
 
 	router.Use(middleware.WithLogging(log))
+	router.Use(chimiddleware.RedirectSlashes)
 
+	router.Post(updatePattern, h.UpdateByJsonFunc())
 	router.Post(updateMetricPattern, h.UpdateFunc())
-	router.Post(updateMetricPattern+"/", h.UpdateFunc())
 	router.Get(getMetricPattern, h.GetValueFunc())
-	router.Get(getMetricPattern+"/", h.GetValueFunc())
 
 	router.Get("/", h.MainFunc())
 

@@ -3,6 +3,7 @@ package handler
 import (
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/MaximPolyaev/go-metrics/internal/html"
 	"github.com/MaximPolyaev/go-metrics/internal/metric"
@@ -14,9 +15,9 @@ type Handler struct {
 }
 
 type metricService interface {
-	Update(mType metric.Type, name string, value string) error
 	GetValues(mType metric.Type) (map[string]string, error)
 	GetValue(mType metric.Type, name string) (value string, ok bool, err error)
+	Update(mm *metric.Metrics) *metric.Metrics
 }
 
 func New(mService metricService) *Handler {
@@ -63,13 +64,31 @@ func (h *Handler) MainFunc() http.HandlerFunc {
 
 func (h *Handler) UpdateFunc() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		mType := metric.Type(chi.URLParam(r, "type"))
-		name := chi.URLParam(r, "name")
+		mm := metric.Metrics{
+			ID:    chi.URLParam(r, "name"),
+			MType: metric.Type(chi.URLParam(r, "type")),
+		}
+
 		valueStr := chi.URLParam(r, "value")
 
-		if err := h.metricService.Update(mType, name, valueStr); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+		switch mm.MType {
+		case metric.GaugeType:
+			value, err := strconv.ParseFloat(valueStr, 64)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			mm.Value = &value
+		case metric.CounterType:
+			value, err := strconv.ParseInt(valueStr, 0, 64)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			mm.Delta = &value
 		}
+
+		h.metricService.Update(&mm)
 	}
 }
 

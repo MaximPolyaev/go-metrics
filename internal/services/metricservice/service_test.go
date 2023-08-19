@@ -13,130 +13,78 @@ func TestMetricService_Update(t *testing.T) {
 	type args struct {
 		name       string
 		metricType metric.Type
-		valStr     string
+		delta      int64
+		value      float64
 	}
 
 	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
+		name      string
+		args      args
+		wantDelta int64
+		wantValue float64
 	}{
 		{
 			name: "counter test case #1",
 			args: args{
-				name:       "some",
-				valStr:     "1",
+				name:       "test",
+				delta:      1,
 				metricType: metric.CounterType,
 			},
-			wantErr: false,
+			wantDelta: 11,
 		},
 		{
 			name: "counter test case #2",
 			args: args{
-				name:       "some",
-				valStr:     "0",
+				name:       "test",
+				delta:      0,
 				metricType: metric.CounterType,
 			},
-			wantErr: false,
+			wantDelta: 10,
 		},
 		{
 			name: "counter test case #3",
 			args: args{
-				name:       "some",
-				valStr:     "-1",
+				name:       "test",
+				delta:      -1,
 				metricType: metric.CounterType,
 			},
-			wantErr: false,
-		},
-		{
-			name: "counter test case #4",
-			args: args{
-				name:       "some",
-				valStr:     "1.1",
-				metricType: metric.CounterType,
-			},
-			wantErr: true,
-		},
-		{
-			name: "counter test case #5",
-			args: args{
-				name:       "some",
-				valStr:     "",
-				metricType: metric.CounterType,
-			},
-			wantErr: true,
-		},
-		{
-			name: "counter test case #6",
-			args: args{
-				name:       "",
-				valStr:     "1",
-				metricType: metric.CounterType,
-			},
-			wantErr: true,
+			wantDelta: 9,
 		},
 		{
 			name: "gauge test case #1",
 			args: args{
-				name:       "some",
-				valStr:     "1",
+				name:       "test",
+				value:      1,
 				metricType: metric.GaugeType,
 			},
-			wantErr: false,
+			wantValue: 1,
 		},
 		{
 			name: "gauge test case #2",
 			args: args{
-				name:       "some",
-				valStr:     "0",
+				name:       "test",
+				value:      0,
 				metricType: metric.GaugeType,
 			},
-			wantErr: false,
+			wantValue: 0,
 		},
 		{
 			name: "gauge test case #3",
 			args: args{
-				name:       "some",
-				valStr:     "-1",
+				name:       "test",
+				value:      -1,
 				metricType: metric.GaugeType,
 			},
-			wantErr: false,
+			wantValue: -1,
 		},
 		{
 			name: "gauge test case #4",
 			args: args{
-				name:       "some",
-				valStr:     "1.1",
+				name:       "test",
+				value:      1.1,
 				metricType: metric.GaugeType,
 			},
-			wantErr: false,
-		},
-		{
-			name: "gauge test case #5",
-			args: args{
-				name:       "some",
-				valStr:     "",
-				metricType: metric.GaugeType,
-			},
-			wantErr: true,
-		},
-		{
-			name: "gauge test case #6",
-			args: args{
-				name:       "",
-				valStr:     "1",
-				metricType: metric.GaugeType,
-			},
-			wantErr: true,
-		},
-		{
-			name: "gauge test case #7",
-			args: args{
-				name:       "some",
-				valStr:     "2,2",
-				metricType: metric.GaugeType,
-			},
-			wantErr: true,
+			wantValue: 1.1,
 		},
 	}
 
@@ -144,12 +92,27 @@ func TestMetricService_Update(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			s := New(mockMemStorage{})
 
-			err := s.Update(tt.args.metricType, tt.args.name, tt.args.valStr)
+			mm := metric.Metrics{
+				ID:    tt.args.name,
+				MType: tt.args.metricType,
+			}
 
-			if tt.wantErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
+			switch mm.MType {
+			case metric.GaugeType:
+				mm.Value = &tt.args.value
+			case metric.CounterType:
+				mm.Delta = &tt.args.delta
+			}
+
+			mm = *s.Update(&mm)
+
+			switch mm.MType {
+			case metric.GaugeType:
+				assert.NotNil(t, mm.Value)
+				assert.Equal(t, tt.wantValue, *mm.Value)
+			case metric.CounterType:
+				assert.NotNil(t, mm.Delta)
+				assert.Equal(t, tt.wantDelta, *mm.Delta)
 			}
 		})
 	}
@@ -255,7 +218,7 @@ func (s mockMemStorage) Get(namespace string, key string) (val interface{}, ok b
 	switch namespace {
 	case metric.CounterType.ToString():
 		if key == "test" {
-			return 10, true
+			return int64(10), true
 		}
 	case metric.GaugeType.ToString():
 		if key == "test" {
@@ -269,7 +232,7 @@ func (s mockMemStorage) GetValuesByNamespace(namespace string) (values map[strin
 	switch namespace {
 	case metric.CounterType.ToString():
 		return map[string]interface{}{
-			"test": 10,
+			"test": int64(10),
 		}, true
 	case metric.GaugeType.ToString():
 		return map[string]interface{}{

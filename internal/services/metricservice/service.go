@@ -24,15 +24,22 @@ func New(s memStorage) *MetricService {
 	}
 }
 
-func (s *MetricService) Update(mType metric.Type, name string, value string) error {
-	switch mType {
+func (s *MetricService) Update(mm *metric.Metrics) *metric.Metrics {
+	switch mm.MType {
 	case metric.GaugeType:
-		return s.gaugeUpdate(name, value)
+		s.storage.Set(mm.MType.ToString(), mm.ID, *mm.Value)
 	case metric.CounterType:
-		return s.counterUpdate(name, value)
+		mTypeAsStr := mm.MType.ToString()
+		existValue, ok := s.storage.Get(mTypeAsStr, mm.ID)
+
+		if ok {
+			*mm.Delta += existValue.(int64)
+		}
+
+		s.storage.Set(mTypeAsStr, mm.ID, *mm.Delta)
 	}
 
-	return errors.New("unexpected metric type: " + mType.ToString())
+	return mm
 }
 
 func (s *MetricService) GetValues(mType metric.Type) (map[string]string, error) {
@@ -55,46 +62,6 @@ func (s *MetricService) GetValue(mType metric.Type, name string) (value string, 
 	}
 
 	return "", false, errors.New("unexpected metric type: " + mType.ToString())
-}
-
-func (s *MetricService) gaugeUpdate(name string, valueStr string) error {
-	if len(name) == 0 {
-		return errors.New("metric name must be not empty")
-	}
-
-	value, err := strconv.ParseFloat(valueStr, 64)
-
-	if err != nil {
-		return errors.New("incorrect value, must be float")
-	}
-
-	s.storage.Set(metric.GaugeType.ToString(), name, value)
-
-	return nil
-}
-
-func (s *MetricService) counterUpdate(name string, valueStr string) error {
-	if len(name) == 0 {
-		return errors.New("metric name must be not empty")
-	}
-
-	value, err := strconv.Atoi(valueStr)
-
-	if err != nil {
-		return errors.New("incorrect value, must be int")
-	}
-
-	sCategory := metric.CounterType.ToString()
-
-	existValue, ok := s.storage.Get(sCategory, name)
-
-	if ok {
-		value += existValue.(int)
-	}
-
-	s.storage.Set(sCategory, name, value)
-
-	return nil
 }
 
 func (s *MetricService) getGaugeValues() (map[string]string, error) {
@@ -123,7 +90,7 @@ func (s *MetricService) getCounterValues() (map[string]string, error) {
 	}
 
 	for k, value := range values {
-		strValues[k] = strconv.Itoa(value.(int))
+		strValues[k] = strconv.Itoa(int(value.(int64)))
 	}
 
 	return strValues, nil
@@ -148,7 +115,7 @@ func (s *MetricService) getCounterValue(name string) (strValue string, ok bool, 
 		return "", ok, errors.New("metric " + name + " not found")
 	}
 
-	strValue = strconv.Itoa(value.(int))
+	strValue = strconv.Itoa(int(value.(int64)))
 
 	return
 }

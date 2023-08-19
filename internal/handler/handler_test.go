@@ -16,7 +16,7 @@ import (
 
 type mockMetricService struct{}
 
-func TestUpdateFunc(t *testing.T) {
+func TestHandler_UpdateFunc(t *testing.T) {
 	tests := []struct {
 		name         string
 		URL          string
@@ -25,7 +25,7 @@ func TestUpdateFunc(t *testing.T) {
 		{
 			name:         "gauge case #1",
 			URL:          "/update/gauge/",
-			expectedCode: http.StatusNotFound,
+			expectedCode: http.StatusMovedPermanently,
 		},
 		{
 			name:         "gauge case #2",
@@ -45,7 +45,7 @@ func TestUpdateFunc(t *testing.T) {
 		{
 			name:         "counter case #1",
 			URL:          "/update/counter/",
-			expectedCode: http.StatusNotFound,
+			expectedCode: http.StatusMovedPermanently,
 		},
 		{
 			name:         "counter case #2",
@@ -80,7 +80,7 @@ func TestUpdateFunc(t *testing.T) {
 	}
 }
 
-func TestMainFunc(t *testing.T) {
+func TestHandler_MainFunc(t *testing.T) {
 	r := httptest.NewRequest(http.MethodGet, "/", nil)
 	w := httptest.NewRecorder()
 
@@ -96,7 +96,7 @@ func TestMainFunc(t *testing.T) {
 	assert.Contains(t, str, "<ul><li>test: 1.1</li><li>test: 10</li></ul>")
 }
 
-func TestGetValue(t *testing.T) {
+func TestHandler_GetValue(t *testing.T) {
 	tests := []struct {
 		name            string
 		URL             string
@@ -106,7 +106,7 @@ func TestGetValue(t *testing.T) {
 		{
 			name:         "gauge case #1",
 			URL:          "/value/gauge/",
-			expectedCode: http.StatusNotFound,
+			expectedCode: http.StatusMovedPermanently,
 		},
 		{
 			name:         "gauge case #2",
@@ -125,15 +125,14 @@ func TestGetValue(t *testing.T) {
 			expectedBodyStr: "1.1",
 		},
 		{
-			name:            "gauge case #5",
-			URL:             "/value/gauge/test/",
-			expectedCode:    http.StatusOK,
-			expectedBodyStr: "1.1",
+			name:         "gauge case #5",
+			URL:          "/value/gauge/test/",
+			expectedCode: http.StatusMovedPermanently,
 		},
 		{
 			name:         "counter case #1",
 			URL:          "/value/counter/",
-			expectedCode: http.StatusNotFound,
+			expectedCode: http.StatusMovedPermanently,
 		},
 		{
 			name:         "counter case #2",
@@ -152,10 +151,9 @@ func TestGetValue(t *testing.T) {
 			expectedBodyStr: "10",
 		},
 		{
-			name:            "counter case #5",
-			URL:             "/value/counter/test/",
-			expectedCode:    http.StatusOK,
-			expectedBodyStr: "10",
+			name:         "counter case #5",
+			URL:          "/value/counter/test/",
+			expectedCode: http.StatusMovedPermanently,
 		},
 	}
 
@@ -179,7 +177,7 @@ func TestGetValue(t *testing.T) {
 	}
 }
 
-func (m *mockMetricService) Update(_ metric.Type, _ string, _ string) error {
+func (m *mockMetricService) Update(_ *metric.Metrics) *metric.Metrics {
 	return nil
 }
 
