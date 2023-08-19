@@ -9,7 +9,7 @@ import (
 	"github.com/MaximPolyaev/go-metrics/internal/metric"
 )
 
-func (h *Handler) UpdateByJsonFunc() http.HandlerFunc {
+func (h *Handler) UpdateByJSONFunc() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ct := r.Header.Get("Content-Type")
 		if ct != "application/json" {

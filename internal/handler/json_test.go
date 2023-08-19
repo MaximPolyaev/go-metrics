@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestHandler_UpdateByJsonFunc(t *testing.T) {
+func TestHandler_UpdateByJSONFunc(t *testing.T) {
 	type Body struct {
 		mm    metric.Metrics
 		delta int64

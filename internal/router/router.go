@@ -20,7 +20,7 @@ type handler interface {
 	UpdateFunc() http.HandlerFunc
 	GetValueFunc() http.HandlerFunc
 	MainFunc() http.HandlerFunc
-	UpdateByJsonFunc() http.HandlerFunc
+	UpdateByJSONFunc() http.HandlerFunc
 }
 
 func CreateRouter(h handler, log *logger.Logger) *chi.Mux {
@@ -29,7 +29,7 @@ func CreateRouter(h handler, log *logger.Logger) *chi.Mux {
 	router.Use(middleware.WithLogging(log))
 	router.Use(chimiddleware.RedirectSlashes)
 
-	router.Post(updatePattern, h.UpdateByJsonFunc())
+	router.Post(updatePattern, h.UpdateByJSONFunc())
 	router.Post(updateMetricPattern, h.UpdateFunc())
 	router.Get(getMetricPattern, h.GetValueFunc())
 
