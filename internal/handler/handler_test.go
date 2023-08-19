@@ -21,7 +21,7 @@ func TestHandler_UpdateFunc(t *testing.T) {
 		{
 			name:         "gauge case #1",
 			URL:          "/update/gauge/",
-			expectedCode: http.StatusMovedPermanently,
+			expectedCode: http.StatusNotFound,
 		},
 		{
 			name:         "gauge case #2",
@@ -41,7 +41,7 @@ func TestHandler_UpdateFunc(t *testing.T) {
 		{
 			name:         "counter case #1",
 			URL:          "/update/counter/",
-			expectedCode: http.StatusMovedPermanently,
+			expectedCode: http.StatusNotFound,
 		},
 		{
 			name:         "counter case #2",
@@ -102,7 +102,7 @@ func TestHandler_GetValue(t *testing.T) {
 		{
 			name:         "gauge case #1",
 			URL:          "/value/gauge/",
-			expectedCode: http.StatusMovedPermanently,
+			expectedCode: http.StatusNotFound,
 		},
 		{
 			name:         "gauge case #2",
@@ -121,14 +121,15 @@ func TestHandler_GetValue(t *testing.T) {
 			expectedBodyStr: "1.1",
 		},
 		{
-			name:         "gauge case #5",
-			URL:          "/value/gauge/test/",
-			expectedCode: http.StatusMovedPermanently,
+			name:            "gauge case #5",
+			URL:             "/value/gauge/test/",
+			expectedCode:    http.StatusOK,
+			expectedBodyStr: "1.1",
 		},
 		{
 			name:         "counter case #1",
 			URL:          "/value/counter/",
-			expectedCode: http.StatusMovedPermanently,
+			expectedCode: http.StatusNotFound,
 		},
 		{
 			name:         "counter case #2",
@@ -147,9 +148,10 @@ func TestHandler_GetValue(t *testing.T) {
 			expectedBodyStr: "10",
 		},
 		{
-			name:         "counter case #5",
-			URL:          "/value/counter/test/",
-			expectedCode: http.StatusMovedPermanently,
+			name:            "counter case #5",
+			URL:             "/value/counter/test/",
+			expectedCode:    http.StatusOK,
+			expectedBodyStr: "10",
 		},
 	}
 

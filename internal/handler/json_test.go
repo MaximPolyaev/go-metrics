@@ -33,15 +33,15 @@ func TestHandler_UpdateByJSONFunc(t *testing.T) {
 		wantStatus  int
 	}{
 		{
-			name:       "redirect",
+			name:       "method not allowed",
 			method:     http.MethodGet,
-			URL:        "/update/",
-			wantStatus: http.StatusMovedPermanently,
+			URL:        "/update",
+			wantStatus: http.StatusMethodNotAllowed,
 		},
 		{
 			name:       "method not allowed",
 			method:     http.MethodGet,
-			URL:        "/update",
+			URL:        "/update/",
 			wantStatus: http.StatusMethodNotAllowed,
 		},
 		{
@@ -152,15 +152,15 @@ func TestHandler_GetValueByJSONFunc(t *testing.T) {
 		wantStatus  int
 	}{
 		{
-			name:       "redirect",
+			name:       "method not allowed",
 			method:     http.MethodGet,
-			URL:        "/value/",
-			wantStatus: http.StatusMovedPermanently,
+			URL:        "/value",
+			wantStatus: http.StatusMethodNotAllowed,
 		},
 		{
 			name:       "method not allowed",
 			method:     http.MethodGet,
-			URL:        "/value",
+			URL:        "/value/",
 			wantStatus: http.StatusMethodNotAllowed,
 		},
 		{
