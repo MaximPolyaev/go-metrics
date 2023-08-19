@@ -88,6 +88,13 @@ func (h *Handler) UpdateFunc() http.HandlerFunc {
 			mm.Delta = &value
 		}
 
+		if err := mm.Validate(); err != nil {
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+		}
+
 		h.metricService.Update(&mm)
 	}
 }
