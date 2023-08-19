@@ -15,14 +15,8 @@ func TestReadStats(t *testing.T) {
 	assert.NotEqual(t, defaultStats, stats)
 }
 
-func TestStats_GetGaugeMap(t *testing.T) {
+func TestStats_AsMetrics(t *testing.T) {
 	stats := Stats{}
 
-	assert.Len(t, stats.GetGaugeMap(), 28)
-}
-
-func TestStats_GetCounterMap(t *testing.T) {
-	stats := Stats{}
-
-	assert.Len(t, stats.GetCounterMap(), 1)
+	assert.Len(t, stats.AsMetrics(), 29)
 }

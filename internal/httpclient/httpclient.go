@@ -1,8 +1,9 @@
 package httpclient
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -25,15 +26,9 @@ func NewHTTPClient(baseURL string) *HTTPClient {
 	}
 }
 
-func (c *HTTPClient) UpdateMetrics(stats *metric.Stats) error {
-	for k, v := range stats.GetCounterMap() {
-		if err := c.updateCounterMetric(k, v); err != nil {
-			return err
-		}
-	}
-
-	for k, v := range stats.GetGaugeMap() {
-		if err := c.updateGaugeMetric(k, v); err != nil {
+func (c *HTTPClient) UpdateMetrics(metrics []metric.Metrics) error {
+	for _, mm := range metrics {
+		if err := c.updateMetric(&mm); err != nil {
 			return err
 		}
 	}
@@ -41,41 +36,18 @@ func (c *HTTPClient) UpdateMetrics(stats *metric.Stats) error {
 	return nil
 }
 
-func (c *HTTPClient) updateGaugeMetric(name string, value float64) error {
-	url := c.makeUpdateURL(
-		metric.GaugeType.ToString(),
-		name,
-		fmt.Sprintf("%f", value),
-	)
-
-	return c.updateMetric(url)
-}
-
-func (c *HTTPClient) updateCounterMetric(name string, value int) error {
-	url := c.makeUpdateURL(
-		metric.CounterType.ToString(),
-		name,
-		fmt.Sprintf("%d", value),
-	)
-
-	return c.updateMetric(url)
-}
-
-func (c *HTTPClient) makeUpdateURL(args ...string) string {
-	url := c.baseURL + updateAction
-
-	for _, arg := range args {
-		url += arg + "/"
-	}
-
-	return url
-}
-
-func (c *HTTPClient) updateMetric(url string) error {
-	req, err := c.makeRequest(url)
+func (c *HTTPClient) updateMetric(mm *metric.Metrics) error {
+	body, err := json.Marshal(mm)
 	if err != nil {
 		return err
 	}
+
+	req, err := http.NewRequest(http.MethodPost, c.baseURL+updateAction, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Add("Content-Type", "application/json")
 
 	resp, err := c.client.Do(req)
 	if err != nil {
@@ -87,7 +59,7 @@ func (c *HTTPClient) updateMetric(url string) error {
 
 		defer func() { _ = resp.Body.Close() }()
 
-		errorMsg := "not update metric " + url + ", err: "
+		errorMsg := "not update metric " + mm.ID + ", err: "
 
 		if err != nil {
 			errorMsg += err.Error()
@@ -99,15 +71,4 @@ func (c *HTTPClient) updateMetric(url string) error {
 	}
 
 	return nil
-}
-
-func (c *HTTPClient) makeRequest(url string) (*http.Request, error) {
-	req, err := http.NewRequest(http.MethodPost, url, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", "text/plain")
-
-	return req, nil
 }

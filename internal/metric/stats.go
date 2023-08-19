@@ -8,12 +8,12 @@ import (
 type (
 	Stats struct {
 		runtime.MemStats
-		PollCount   int
+		PollCount   int64
 		RandomValue int
 	}
 
 	GaugeMap   map[string]float64
-	CounterMap map[string]int
+	CounterMap map[string]int64
 )
 
 func ReadStats(stats *Stats) {
@@ -23,7 +23,37 @@ func ReadStats(stats *Stats) {
 	stats.RandomValue = rand.Int()
 }
 
-func (s *Stats) GetGaugeMap() GaugeMap {
+func (s *Stats) AsMetrics() []Metrics {
+	metrics := make([]Metrics, 0, 30)
+
+	for k, v := range s.getGaugeMap() {
+		mm := Metrics{
+			ID:    k,
+			MType: GaugeType,
+			Value: new(float64),
+		}
+
+		*mm.Value = v
+
+		metrics = append(metrics, mm)
+	}
+
+	for k, v := range s.getCounterMap() {
+		mm := Metrics{
+			ID:    k,
+			MType: CounterType,
+			Delta: new(int64),
+		}
+
+		*mm.Delta = v
+
+		metrics = append(metrics, mm)
+	}
+
+	return metrics
+}
+
+func (s *Stats) getGaugeMap() GaugeMap {
 	return GaugeMap{
 		"Alloc":         float64(s.Alloc),
 		"BuckHashSys":   float64(s.BuckHashSys),
@@ -56,7 +86,7 @@ func (s *Stats) GetGaugeMap() GaugeMap {
 	}
 }
 
-func (s *Stats) GetCounterMap() CounterMap {
+func (s *Stats) getCounterMap() CounterMap {
 	return CounterMap{
 		"PollCount": s.PollCount,
 	}
