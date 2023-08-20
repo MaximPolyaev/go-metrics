@@ -8,8 +8,9 @@ import (
 )
 
 type compressWriter struct {
-	w  http.ResponseWriter
-	zw *gzip.Writer
+	w          http.ResponseWriter
+	zw         *gzip.Writer
+	isClosable bool
 }
 
 type compressReader struct {
@@ -59,6 +60,8 @@ func (c *compressWriter) Header() http.Header {
 
 func (c *compressWriter) Write(p []byte) (int, error) {
 	if c.isAllowGzip() {
+		c.isClosable = true
+		c.w.Header().Set("Content-Encoding", "gzip")
 		return c.zw.Write(p)
 	}
 
@@ -73,7 +76,11 @@ func (c *compressWriter) WriteHeader(statusCode int) {
 }
 
 func (c *compressWriter) Close() error {
-	return c.zw.Close()
+	if c.isClosable {
+		return c.zw.Close()
+	}
+
+	return nil
 }
 
 func (c *compressReader) Read(p []byte) (n int, err error) {
@@ -93,8 +100,6 @@ func (c *compressWriter) isAllowGzip() bool {
 }
 
 func newCompressWriter(w http.ResponseWriter) *compressWriter {
-	w.Header().Set("Content-Encoding", "gzip")
-
 	return &compressWriter{
 		w:  w,
 		zw: gzip.NewWriter(w),
