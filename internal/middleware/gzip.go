@@ -1,16 +1,17 @@
 package middleware
 
 import (
+	"bytes"
 	"compress/gzip"
 	"io"
 	"net/http"
 	"strings"
 )
 
-type compressWriter struct {
+type bufWriter struct {
 	w          http.ResponseWriter
-	zw         *gzip.Writer
-	isClosable bool
+	buf        *bytes.Buffer
+	statusCode int
 }
 
 type compressReader struct {
@@ -20,20 +21,6 @@ type compressReader struct {
 
 func GzipMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ow := w
-
-		acceptEncoding := r.Header.Get("Accept-Encoding")
-		supportsGzip := strings.Contains(acceptEncoding, "gzip")
-		if supportsGzip {
-			cw := newCompressWriter(w)
-			ow = cw
-			defer func() {
-				if err := cw.Close(); err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-				}
-			}()
-		}
-
 		contentEncoding := r.Header.Get("Content-Encoding")
 		sendsGzip := strings.Contains(contentEncoding, "gzip")
 		if sendsGzip {
@@ -50,37 +37,47 @@ func GzipMiddleware(next http.Handler) http.Handler {
 			}()
 		}
 
-		next.ServeHTTP(ow, r)
+		bw := newBufWriter(w)
+
+		next.ServeHTTP(bw, r)
+
+		acceptEncoding := r.Header.Get("Accept-Encoding")
+		supportsGzip := strings.Contains(acceptEncoding, "gzip")
+		contentType := bw.Header().Get("Content-Type")
+		if supportsGzip && (contentType == "text/html" || contentType == "application/json") {
+			w.Header().Set("Content-Encoding", "gzip")
+			w.WriteHeader(bw.statusCode)
+			gz := gzip.NewWriter(w)
+
+			if _, err := gz.Write(bw.buf.Bytes()); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+
+			defer func() {
+				if err := gz.Close(); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+				}
+			}()
+			return
+		}
+
+		w.WriteHeader(bw.statusCode)
+		if _, err := w.Write(bw.buf.Bytes()); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	})
 }
 
-func (c *compressWriter) Header() http.Header {
+func (c *bufWriter) Header() http.Header {
 	return c.w.Header()
 }
 
-func (c *compressWriter) Write(p []byte) (int, error) {
-	if c.isAllowGzip() {
-		c.isClosable = true
-		c.w.Header().Set("Content-Encoding", "gzip")
-		return c.zw.Write(p)
-	}
-
-	return c.w.Write(p)
+func (c *bufWriter) Write(p []byte) (int, error) {
+	return c.buf.Write(p)
 }
 
-func (c *compressWriter) WriteHeader(statusCode int) {
-	if c.isAllowGzip() && statusCode < 300 {
-		c.w.Header().Set("Content-Encoding", "gzip")
-	}
-	c.w.WriteHeader(statusCode)
-}
-
-func (c *compressWriter) Close() error {
-	if c.isClosable {
-		return c.zw.Close()
-	}
-
-	return nil
+func (c *bufWriter) WriteHeader(statusCode int) {
+	c.statusCode = statusCode
 }
 
 func (c *compressReader) Read(p []byte) (n int, err error) {
@@ -93,16 +90,13 @@ func (c *compressReader) Close() error {
 	}
 	return c.zr.Close()
 }
+func newBufWriter(w http.ResponseWriter) *bufWriter {
+	var buf []byte
 
-func (c *compressWriter) isAllowGzip() bool {
-	ct := c.Header().Get("Content-Type")
-	return ct == "text/html" || ct == "application/json"
-}
-
-func newCompressWriter(w http.ResponseWriter) *compressWriter {
-	return &compressWriter{
-		w:  w,
-		zw: gzip.NewWriter(w),
+	return &bufWriter{
+		w:          w,
+		buf:        bytes.NewBuffer(buf),
+		statusCode: http.StatusOK,
 	}
 }
 
