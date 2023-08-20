@@ -54,8 +54,9 @@ func (h *Handler) MainFunc() http.HandlerFunc {
 		htmlDocument := html.NewDocument()
 		htmlDocument.SetBody(html.Ul(list))
 
-		_, err = io.WriteString(w, htmlDocument.AsString())
+		w.Header().Set("Content-Type", "text/html")
 
+		_, err = io.WriteString(w, htmlDocument.AsString())
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadGateway)
 			return

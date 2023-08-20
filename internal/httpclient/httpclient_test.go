@@ -1,6 +1,7 @@
 package httpclient
 
 import (
+	"compress/gzip"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -53,7 +54,10 @@ func TestUpdateMetrics(t *testing.T) {
 			assert.NoError(t, err)
 		}()
 
-		buf, err := io.ReadAll(r.Body)
+		reader, err := gzip.NewReader(r.Body)
+		assert.NoError(t, err)
+
+		buf, err := io.ReadAll(reader)
 		assert.NoError(t, err)
 
 		var record = struct {

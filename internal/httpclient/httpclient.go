@@ -2,6 +2,7 @@ package httpclient
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"errors"
 	"io"
@@ -42,12 +43,10 @@ func (c *HTTPClient) updateMetric(mm *metric.Metrics) error {
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, c.baseURL+updateAction, bytes.NewReader(body))
+	req, err := c.newUpdateReq(updateAction, body)
 	if err != nil {
 		return err
 	}
-
-	req.Header.Add("Content-Type", "application/json")
 
 	resp, err := c.client.Do(req)
 	if err != nil {
@@ -71,4 +70,28 @@ func (c *HTTPClient) updateMetric(mm *metric.Metrics) error {
 	}
 
 	return nil
+}
+
+func (c *HTTPClient) newUpdateReq(url string, body []byte) (*http.Request, error) {
+	var buf bytes.Buffer
+
+	gz := gzip.NewWriter(&buf)
+	if _, err := gz.Write(body); err != nil {
+		return nil, err
+	}
+
+	if err := gz.Close(); err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, c.baseURL+url, &buf)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Accept-Encoding", "gzip")
+	req.Header.Add("Content-Encoding", "gzip")
+
+	return req, nil
 }

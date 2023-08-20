@@ -27,6 +27,7 @@ type handler interface {
 func CreateRouter(h handler, log *logger.Logger) *chi.Mux {
 	router := chi.NewRouter()
 
+	router.Use(middleware.GzipMiddleware)
 	router.Use(middleware.WithLogging(log))
 	router.Use(chimiddleware.StripSlashes)
 
