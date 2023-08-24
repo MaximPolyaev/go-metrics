@@ -25,12 +25,20 @@ func run() error {
 		return err
 	}
 
-	store := memstorage.New()
-	metricService := metricservice.New(store)
+	storeCfg := config.NewStoreConfig()
+	if err := storeCfg.Parse(); err != nil {
+		return err
+	}
 
-	h := handler.New(metricService)
+	store := memstorage.New()
 	lg := logger.New(os.Stdout)
 
+	metricService, err := metricservice.New(store, storeCfg, lg)
+	if err != nil {
+		return err
+	}
+
+	h := handler.New(metricService)
 	muxRouter := router.CreateRouter(h, lg)
 
 	return http.ListenAndServe(*cfg.Addr, muxRouter)

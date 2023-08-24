@@ -90,7 +90,8 @@ func TestMetricService_Update(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := New(mockMemStorage{})
+			s, err := New(mockMemStorage{}, nil, nil)
+			assert.NoError(t, err)
 
 			mm := metric.Metrics{
 				ID:    tt.args.name,
@@ -140,7 +141,8 @@ func TestMetricService_GetValues(t *testing.T) {
 		},
 	}
 
-	s := New(mockMemStorage{})
+	s, err := New(mockMemStorage{}, nil, nil)
+	assert.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -195,7 +197,8 @@ func TestMetricService_GetValue(t *testing.T) {
 		},
 	}
 
-	s := New(mockMemStorage{})
+	s, err := New(mockMemStorage{}, nil, nil)
+	assert.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

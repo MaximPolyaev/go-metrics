@@ -1,15 +1,22 @@
 package metricservice
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
+	"time"
 
+	"github.com/MaximPolyaev/go-metrics/internal/config"
+	"github.com/MaximPolyaev/go-metrics/internal/logger"
 	"github.com/MaximPolyaev/go-metrics/internal/metric"
 )
 
 type MetricService struct {
-	storage memStorage
+	storage  memStorage
+	storeCfg *config.StoreConfig
+	log      *logger.Logger
 }
 
 type memStorage interface {
@@ -18,10 +25,24 @@ type memStorage interface {
 	GetValuesByNamespace(namespace string) (values map[string]interface{}, ok bool)
 }
 
-func New(s memStorage) *MetricService {
-	return &MetricService{
-		storage: s,
+func New(s memStorage, storeCfg *config.StoreConfig, log *logger.Logger) (*MetricService, error) {
+	ms := &MetricService{
+		storage:  s,
+		storeCfg: storeCfg,
+		log:      log,
 	}
+
+	if storeCfg != nil {
+		if err := ms.restore(); err != nil {
+			return nil, err
+		}
+
+		if *storeCfg.StoreInterval != 0 {
+			ms.async()
+		}
+	}
+
+	return ms, nil
 }
 
 func (s *MetricService) Update(mm *metric.Metrics) *metric.Metrics {
@@ -38,6 +59,8 @@ func (s *MetricService) Update(mm *metric.Metrics) *metric.Metrics {
 
 		s.storage.Set(mTypeAsStr, mm.ID, *mm.Delta)
 	}
+
+	s.sync()
 
 	return mm
 }
@@ -137,4 +160,112 @@ func (s *MetricService) getCounterValue(name string) (strValue string, ok bool, 
 	strValue = strconv.Itoa(int(value.(int64)))
 
 	return
+}
+
+func (s *MetricService) async() {
+	storeInterval := time.NewTicker(time.Duration(*s.storeCfg.StoreInterval) * time.Second)
+
+	go func() {
+		for {
+			select {
+			case <-storeInterval.C:
+				if err := s.store(); err != nil {
+					s.log.Error(err)
+				}
+			}
+		}
+	}()
+}
+
+func (s *MetricService) sync() {
+	if s.storeCfg == nil || *s.storeCfg.StoreInterval != 0 {
+		return
+	}
+
+	if err := s.store(); err != nil {
+		s.log.Error(err)
+	}
+}
+
+func (s *MetricService) restore() error {
+	if !*s.storeCfg.Restore {
+		return nil
+	}
+
+	data, err := os.ReadFile(*s.storeCfg.FileStoragePath)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
+
+		return err
+	}
+
+	var mSlice []metric.Metrics
+
+	if err := json.Unmarshal(data, &mSlice); err != nil {
+		return err
+	}
+
+	if mSlice == nil {
+		return nil
+	}
+
+	for _, m := range mSlice {
+		s.Update(&m)
+	}
+
+	return nil
+}
+
+func (s *MetricService) store() error {
+	mSlice := s.getAll()
+	if mSlice == nil {
+		return nil
+	}
+
+	data, err := json.MarshalIndent(mSlice, "", " ")
+	if err != nil {
+		return nil
+	}
+
+	return os.WriteFile(*s.storeCfg.FileStoragePath, data, 0666)
+}
+
+func (s *MetricService) getAll() []metric.Metrics {
+	values, ok := s.storage.GetValuesByNamespace(metric.CounterType.ToString())
+
+	var mSlice []metric.Metrics
+
+	if ok {
+		for k, v := range values {
+			var tmpV int64
+
+			tmpV = v.(int64)
+
+			mSlice = append(mSlice, metric.Metrics{
+				ID:    k,
+				MType: metric.CounterType,
+				Delta: &tmpV,
+			})
+		}
+	}
+
+	values, ok = s.storage.GetValuesByNamespace(metric.GaugeType.ToString())
+
+	if ok {
+		for k, v := range values {
+			var tmpV float64
+
+			tmpV = v.(float64)
+
+			mSlice = append(mSlice, metric.Metrics{
+				ID:    k,
+				MType: metric.GaugeType,
+				Value: &tmpV,
+			})
+		}
+	}
+
+	return mSlice
 }

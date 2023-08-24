@@ -11,19 +11,29 @@ type AddressConfig struct {
 	Addr *string `env:"ADDRESS"`
 }
 
-type BaseConfig struct {
+type ReportConfig struct {
 	AddressConfig
 
 	ReportInterval *int `env:"REPORT_INTERVAL"`
 	PollInterval   *int `env:"POLL_INTERVAL"`
 }
 
-func NewAddressConfig() AddressConfig {
-	return AddressConfig{}
+type StoreConfig struct {
+	StoreInterval   *uint   `env:"STORE_INTERVAL"`
+	FileStoragePath *string `env:"FILE_STORAGE_PATH"`
+	Restore         *bool   `env:"RESTORE"`
 }
 
-func NewBaseConfig() BaseConfig {
-	return BaseConfig{}
+func NewAddressConfig() *AddressConfig {
+	return &AddressConfig{}
+}
+
+func NewStoreConfig() *StoreConfig {
+	return &StoreConfig{}
+}
+
+func NewReportConfig() *ReportConfig {
+	return &ReportConfig{}
 }
 
 func (cfg *AddressConfig) Parse() error {
@@ -40,7 +50,32 @@ func (cfg *AddressConfig) Parse() error {
 	return nil
 }
 
-func (cfg *BaseConfig) Parse() error {
+func (cfg *StoreConfig) Parse() error {
+	if err := env.Parse(cfg); err != nil {
+		return err
+	}
+
+	if cfg.StoreInterval == nil {
+		cfg.StoreInterval = new(uint)
+		flag.UintVar(cfg.StoreInterval, "i", 1, "store interval")
+	}
+
+	if cfg.FileStoragePath == nil {
+		cfg.FileStoragePath = new(string)
+		flag.StringVar(cfg.FileStoragePath, "f", "/tmp/metrics-db.json", "file storage path")
+	}
+
+	if cfg.Restore == nil {
+		cfg.Restore = new(bool)
+		flag.BoolVar(cfg.Restore, "r", true, "restore")
+	}
+
+	flag.Parse()
+
+	return nil
+}
+
+func (cfg *ReportConfig) Parse() error {
 	if err := env.Parse(cfg); err != nil {
 		return err
 	}

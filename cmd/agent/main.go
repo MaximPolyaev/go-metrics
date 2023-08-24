@@ -16,7 +16,7 @@ func main() {
 }
 
 func run() error {
-	cfg := config.NewBaseConfig()
+	cfg := config.NewReportConfig()
 	if err := cfg.Parse(); err != nil {
 		return err
 	}
