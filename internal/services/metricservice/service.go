@@ -167,11 +167,10 @@ func (s *MetricService) async() {
 
 	go func() {
 		for {
-			select {
-			case <-storeInterval.C:
-				if err := s.store(); err != nil {
-					s.log.Error(err)
-				}
+			<-storeInterval.C
+
+			if err := s.store(); err != nil {
+				s.log.Error(err)
 			}
 		}
 	}()
@@ -239,9 +238,7 @@ func (s *MetricService) getAll() []metric.Metrics {
 
 	if ok {
 		for k, v := range values {
-			var tmpV int64
-
-			tmpV = v.(int64)
+			tmpV := v.(int64)
 
 			mSlice = append(mSlice, metric.Metrics{
 				ID:    k,
@@ -255,9 +252,7 @@ func (s *MetricService) getAll() []metric.Metrics {
 
 	if ok {
 		for k, v := range values {
-			var tmpV float64
-
-			tmpV = v.(float64)
+			tmpV := v.(float64)
 
 			mSlice = append(mSlice, metric.Metrics{
 				ID:    k,
