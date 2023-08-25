@@ -27,7 +27,7 @@ func (h *Handler) UpdateByJSONFunc() http.HandlerFunc {
 			return
 		}
 
-		mm := new(metric.Metrics)
+		mm := new(metric.Metric)
 
 		if err := json.Unmarshal(buf, mm); err != nil {
 			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
@@ -74,7 +74,7 @@ func (h *Handler) GetValueByJSONFunc() http.HandlerFunc {
 			return
 		}
 
-		mm := new(metric.Metrics)
+		mm := new(metric.Metric)
 
 		if err := json.Unmarshal(buf, mm); err != nil {
 			http.Error(w, err.Error(), http.StatusUnprocessableEntity)

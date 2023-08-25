@@ -7,7 +7,7 @@ import (
 
 type Type string
 
-type Metrics struct {
+type Metric struct {
 	ID    string   `json:"id"`
 	MType Type     `json:"type"`
 	Delta *int64   `json:"delta,omitempty"`
@@ -34,7 +34,7 @@ func (t Type) Validate() error {
 	return errors.New("invalid metricservice type: " + t.ToString())
 }
 
-func (m *Metrics) ValueInit() {
+func (m *Metric) ValueInit() {
 	switch m.MType {
 	case CounterType:
 		m.Delta = new(int64)
@@ -43,7 +43,7 @@ func (m *Metrics) ValueInit() {
 	}
 }
 
-func (m *Metrics) Validate() error {
+func (m *Metric) Validate() error {
 	if len(m.ID) == 0 {
 		return errors.New("metricservice ID must be not empty")
 	}
@@ -55,7 +55,7 @@ func (m *Metrics) Validate() error {
 	return nil
 }
 
-func (m *Metrics) ValidateWithValue() error {
+func (m *Metric) ValidateWithValue() error {
 	if err := m.Validate(); err != nil {
 		return err
 	}

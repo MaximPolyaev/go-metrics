@@ -45,7 +45,7 @@ func New(s memStorage, storeCfg *config.StoreConfig, log *logger.Logger) (*Metri
 	return ms, nil
 }
 
-func (s *MetricService) Update(mm *metric.Metrics) *metric.Metrics {
+func (s *MetricService) Update(mm *metric.Metric) *metric.Metric {
 	switch mm.MType {
 	case metric.GaugeType:
 		s.storage.Set(mm.MType, mm.ID, *mm.Value)
@@ -64,7 +64,7 @@ func (s *MetricService) Update(mm *metric.Metrics) *metric.Metrics {
 	return mm
 }
 
-func (s *MetricService) Get(mm *metric.Metrics) *metric.Metrics {
+func (s *MetricService) Get(mm *metric.Metric) *metric.Metric {
 	mm.ValueInit()
 
 	value, ok := s.storage.Get(mm.MType, mm.ID)
@@ -199,7 +199,7 @@ func (s *MetricService) restore() error {
 		return err
 	}
 
-	var mSlice []metric.Metrics
+	var mSlice []metric.Metric
 
 	if err := json.Unmarshal(data, &mSlice); err != nil {
 		return err
@@ -230,16 +230,16 @@ func (s *MetricService) store() error {
 	return os.WriteFile(*s.storeCfg.FileStoragePath, data, 0666)
 }
 
-func (s *MetricService) getAll() []metric.Metrics {
+func (s *MetricService) getAll() []metric.Metric {
 	values, ok := s.storage.GetAllByType(metric.CounterType)
 
-	var mSlice []metric.Metrics
+	var mSlice []metric.Metric
 
 	if ok {
 		for k, v := range values {
 			tmpV := v.(int64)
 
-			mSlice = append(mSlice, metric.Metrics{
+			mSlice = append(mSlice, metric.Metric{
 				ID:    k,
 				MType: metric.CounterType,
 				Delta: &tmpV,
@@ -253,7 +253,7 @@ func (s *MetricService) getAll() []metric.Metrics {
 		for k, v := range values {
 			tmpV := v.(float64)
 
-			mSlice = append(mSlice, metric.Metrics{
+			mSlice = append(mSlice, metric.Metric{
 				ID:    k,
 				MType: metric.GaugeType,
 				Value: &tmpV,

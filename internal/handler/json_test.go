@@ -19,7 +19,7 @@ import (
 
 func TestHandler_UpdateByJSONFunc(t *testing.T) {
 	type Body struct {
-		mm    metric.Metrics
+		mm    metric.Metric
 		delta int64
 		value float64
 	}
@@ -70,7 +70,7 @@ func TestHandler_UpdateByJSONFunc(t *testing.T) {
 			URL:         "/update",
 			contentType: "application/json",
 			body: &Body{
-				mm: metric.Metrics{
+				mm: metric.Metric{
 					ID:    "",
 					MType: metric.Type(""),
 				},
@@ -83,7 +83,7 @@ func TestHandler_UpdateByJSONFunc(t *testing.T) {
 			URL:         "/update",
 			contentType: "application/json",
 			body: &Body{
-				mm: metric.Metrics{
+				mm: metric.Metric{
 					ID:    "test",
 					MType: metric.CounterType,
 				},
@@ -97,7 +97,7 @@ func TestHandler_UpdateByJSONFunc(t *testing.T) {
 			URL:         "/update",
 			contentType: "application/json",
 			body: &Body{
-				mm: metric.Metrics{
+				mm: metric.Metric{
 					ID:    "test",
 					MType: metric.GaugeType,
 				},
@@ -148,7 +148,7 @@ func TestHandler_GetValueByJSONFunc(t *testing.T) {
 		method      string
 		URL         string
 		contentType string
-		mm          *metric.Metrics
+		mm          *metric.Metric
 		wantStatus  int
 	}{
 		{
@@ -188,7 +188,7 @@ func TestHandler_GetValueByJSONFunc(t *testing.T) {
 			method:      http.MethodPost,
 			URL:         "/value",
 			contentType: "application/json",
-			mm: &metric.Metrics{
+			mm: &metric.Metric{
 				ID:    "",
 				MType: metric.Type(""),
 			},
@@ -199,7 +199,7 @@ func TestHandler_GetValueByJSONFunc(t *testing.T) {
 			method:      http.MethodPost,
 			URL:         "/value",
 			contentType: "application/json",
-			mm: &metric.Metrics{
+			mm: &metric.Metric{
 				ID:    "test",
 				MType: metric.CounterType,
 			},
@@ -210,7 +210,7 @@ func TestHandler_GetValueByJSONFunc(t *testing.T) {
 			method:      http.MethodPost,
 			URL:         "/value",
 			contentType: "application/json",
-			mm: &metric.Metrics{
+			mm: &metric.Metric{
 				ID:    "test",
 				MType: metric.GaugeType,
 			},

@@ -93,7 +93,7 @@ func TestMetricService_Update(t *testing.T) {
 			s, err := New(mockMemStorage{}, nil, nil)
 			assert.NoError(t, err)
 
-			mm := metric.Metrics{
+			mm := metric.Metric{
 				ID:    tt.args.id,
 				MType: tt.args.metricType,
 			}
@@ -157,7 +157,7 @@ func TestMetricService_GetValues(t *testing.T) {
 func TestMetricService_GetValue(t *testing.T) {
 	tests := []struct {
 		name       string
-		metricId   string
+		metricID   string
 		metricType metric.Type
 		ok         bool
 		want       string
@@ -165,7 +165,7 @@ func TestMetricService_GetValue(t *testing.T) {
 	}{
 		{
 			name:       "empty counter value",
-			metricId:   "not exist",
+			metricID:   "not exist",
 			metricType: metric.CounterType,
 			ok:         false,
 			want:       "",
@@ -173,7 +173,7 @@ func TestMetricService_GetValue(t *testing.T) {
 		},
 		{
 			name:       "not empty counter value",
-			metricId:   "test",
+			metricID:   "test",
 			metricType: metric.CounterType,
 			ok:         true,
 			want:       "10",
@@ -181,7 +181,7 @@ func TestMetricService_GetValue(t *testing.T) {
 		},
 		{
 			name:       "empty gauge value",
-			metricId:   "not exist",
+			metricID:   "not exist",
 			metricType: metric.GaugeType,
 			ok:         false,
 			want:       "",
@@ -189,7 +189,7 @@ func TestMetricService_GetValue(t *testing.T) {
 		},
 		{
 			name:       "not empty gauge value",
-			metricId:   "test",
+			metricID:   "test",
 			metricType: metric.GaugeType,
 			ok:         true,
 			want:       "1.1",
@@ -202,7 +202,7 @@ func TestMetricService_GetValue(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, ok, err := s.GetValue(tt.metricType, tt.metricId)
+			got, ok, err := s.GetValue(tt.metricType, tt.metricID)
 
 			if tt.wantErr {
 				assert.Error(t, err)

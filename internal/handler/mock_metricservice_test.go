@@ -8,11 +8,11 @@ import (
 
 type mockMetricService struct{}
 
-func (m *mockMetricService) Update(_ *metric.Metrics) *metric.Metrics {
+func (m *mockMetricService) Update(_ *metric.Metric) *metric.Metric {
 	return nil
 }
 
-func (m *mockMetricService) Get(mm *metric.Metrics) *metric.Metrics {
+func (m *mockMetricService) Get(mm *metric.Metric) *metric.Metric {
 	return mm
 }
 
@@ -30,18 +30,18 @@ func (m *mockMetricService) GetValues(mType metric.Type) (map[string]string, err
 	return nil, nil
 }
 
-func (m *mockMetricService) GetValue(mType metric.Type, name string) (value string, ok bool, err error) {
-	if name == "notExist" {
+func (m *mockMetricService) GetValue(mType metric.Type, id string) (value string, ok bool, err error) {
+	if id == "notExist" {
 		return "", false, errors.New("")
 	}
 
 	switch mType {
 	case metric.CounterType:
-		if name == "test" {
+		if id == "test" {
 			return "10", true, nil
 		}
 	case metric.GaugeType:
-		if name == "test" {
+		if id == "test" {
 			return "1.1", true, nil
 		}
 	}

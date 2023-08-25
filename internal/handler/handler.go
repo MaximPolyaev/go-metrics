@@ -17,8 +17,8 @@ type Handler struct {
 type metricService interface {
 	GetValues(mType metric.Type) (map[string]string, error)
 	GetValue(mType metric.Type, name string) (value string, ok bool, err error)
-	Update(mm *metric.Metrics) *metric.Metrics
-	Get(mm *metric.Metrics) *metric.Metrics
+	Update(mm *metric.Metric) *metric.Metric
+	Get(mm *metric.Metric) *metric.Metric
 }
 
 func New(mService metricService) *Handler {
@@ -66,7 +66,7 @@ func (h *Handler) MainFunc() http.HandlerFunc {
 
 func (h *Handler) UpdateFunc() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		mm := metric.Metrics{
+		mm := metric.Metric{
 			ID:    chi.URLParam(r, "name"),
 			MType: metric.Type(chi.URLParam(r, "type")),
 		}

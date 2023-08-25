@@ -23,11 +23,11 @@ func ReadStats(stats *Stats) {
 	stats.RandomValue = rand.Int()
 }
 
-func (s *Stats) AsMetrics() []Metrics {
-	metrics := make([]Metrics, 0, 30)
+func (s *Stats) AsMetrics() []Metric {
+	metrics := make([]Metric, 0, 30)
 
 	for k, v := range s.getGaugeMap() {
-		mm := Metrics{
+		mm := Metric{
 			ID:    k,
 			MType: GaugeType,
 			Value: new(float64),
@@ -39,7 +39,7 @@ func (s *Stats) AsMetrics() []Metrics {
 	}
 
 	for k, v := range s.getCounterMap() {
-		mm := Metrics{
+		mm := Metric{
 			ID:    k,
 			MType: CounterType,
 			Delta: new(int64),

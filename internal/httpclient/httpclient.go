@@ -27,7 +27,7 @@ func NewHTTPClient(baseURL string) *HTTPClient {
 	}
 }
 
-func (c *HTTPClient) UpdateMetrics(metrics []metric.Metrics) error {
+func (c *HTTPClient) UpdateMetrics(metrics []metric.Metric) error {
 	for _, mm := range metrics {
 		if err := c.updateMetric(&mm); err != nil {
 			return err
@@ -37,7 +37,7 @@ func (c *HTTPClient) UpdateMetrics(metrics []metric.Metrics) error {
 	return nil
 }
 
-func (c *HTTPClient) updateMetric(mm *metric.Metrics) error {
+func (c *HTTPClient) updateMetric(mm *metric.Metric) error {
 	body, err := json.Marshal(mm)
 	if err != nil {
 		return err
