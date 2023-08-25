@@ -20,8 +20,8 @@ type MetricService struct {
 }
 
 type memStorage interface {
-	Set(mType metric.Type, key string, val interface{})
-	Get(mType metric.Type, key string) (val interface{}, ok bool)
+	Set(mType metric.Type, id string, val interface{})
+	Get(mType metric.Type, id string) (val interface{}, ok bool)
 	GetAllByType(mType metric.Type) (values map[string]interface{}, ok bool)
 }
 

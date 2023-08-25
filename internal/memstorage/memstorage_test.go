@@ -9,11 +9,11 @@ import (
 
 func Test_memStorage_Get(t *testing.T) {
 	s := New()
-	s.Set(metric.CounterType, "test key", 1)
+	s.Set(metric.CounterType, "test id", 1)
 
 	type args struct {
 		mType metric.Type
-		key   string
+		id    string
 	}
 
 	tests := []struct {
@@ -26,7 +26,7 @@ func Test_memStorage_Get(t *testing.T) {
 			name: "test case #1",
 			args: args{
 				mType: metric.GaugeType,
-				key:   "test key",
+				id:    "test id",
 			},
 			wantVal: nil,
 			wantOk:  false,
@@ -35,7 +35,7 @@ func Test_memStorage_Get(t *testing.T) {
 			name: "test case #2",
 			args: args{
 				mType: metric.CounterType,
-				key:   "test key",
+				id:    "test id",
 			},
 			wantVal: 1,
 			wantOk:  true,
@@ -44,7 +44,7 @@ func Test_memStorage_Get(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotVal, gotOk := s.Get(tt.args.mType, tt.args.key)
+			gotVal, gotOk := s.Get(tt.args.mType, tt.args.id)
 			assert.Equal(t, tt.wantVal, gotVal)
 			assert.Equal(t, tt.wantOk, gotOk)
 		})
@@ -53,7 +53,7 @@ func Test_memStorage_Get(t *testing.T) {
 
 func Test_memStorage_GetValuesByNamespace(t *testing.T) {
 	s := New()
-	s.Set(metric.CounterType, "test key", 1)
+	s.Set(metric.CounterType, "test id", 1)
 
 	tests := []struct {
 		name       string
@@ -71,7 +71,7 @@ func Test_memStorage_GetValuesByNamespace(t *testing.T) {
 			name:  "test case #2",
 			mType: metric.CounterType,
 			wantValues: map[string]interface{}{
-				"test key": 1,
+				"test id": 1,
 			},
 			wantOk: true,
 		},

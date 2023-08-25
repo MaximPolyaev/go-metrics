@@ -11,7 +11,7 @@ type mockMemStorage struct{}
 
 func TestMetricService_Update(t *testing.T) {
 	type args struct {
-		name       string
+		id         string
 		metricType metric.Type
 		delta      int64
 		value      float64
@@ -26,7 +26,7 @@ func TestMetricService_Update(t *testing.T) {
 		{
 			name: "counter test case #1",
 			args: args{
-				name:       "test",
+				id:         "test",
 				delta:      1,
 				metricType: metric.CounterType,
 			},
@@ -35,7 +35,7 @@ func TestMetricService_Update(t *testing.T) {
 		{
 			name: "counter test case #2",
 			args: args{
-				name:       "test",
+				id:         "test",
 				delta:      0,
 				metricType: metric.CounterType,
 			},
@@ -44,7 +44,7 @@ func TestMetricService_Update(t *testing.T) {
 		{
 			name: "counter test case #3",
 			args: args{
-				name:       "test",
+				id:         "test",
 				delta:      -1,
 				metricType: metric.CounterType,
 			},
@@ -53,7 +53,7 @@ func TestMetricService_Update(t *testing.T) {
 		{
 			name: "gauge test case #1",
 			args: args{
-				name:       "test",
+				id:         "test",
 				value:      1,
 				metricType: metric.GaugeType,
 			},
@@ -62,7 +62,7 @@ func TestMetricService_Update(t *testing.T) {
 		{
 			name: "gauge test case #2",
 			args: args{
-				name:       "test",
+				id:         "test",
 				value:      0,
 				metricType: metric.GaugeType,
 			},
@@ -71,7 +71,7 @@ func TestMetricService_Update(t *testing.T) {
 		{
 			name: "gauge test case #3",
 			args: args{
-				name:       "test",
+				id:         "test",
 				value:      -1,
 				metricType: metric.GaugeType,
 			},
@@ -80,7 +80,7 @@ func TestMetricService_Update(t *testing.T) {
 		{
 			name: "gauge test case #4",
 			args: args{
-				name:       "test",
+				id:         "test",
 				value:      1.1,
 				metricType: metric.GaugeType,
 			},
@@ -94,7 +94,7 @@ func TestMetricService_Update(t *testing.T) {
 			assert.NoError(t, err)
 
 			mm := metric.Metrics{
-				ID:    tt.args.name,
+				ID:    tt.args.id,
 				MType: tt.args.metricType,
 			}
 
@@ -157,7 +157,7 @@ func TestMetricService_GetValues(t *testing.T) {
 func TestMetricService_GetValue(t *testing.T) {
 	tests := []struct {
 		name       string
-		metricName string
+		metricId   string
 		metricType metric.Type
 		ok         bool
 		want       string
@@ -165,7 +165,7 @@ func TestMetricService_GetValue(t *testing.T) {
 	}{
 		{
 			name:       "empty counter value",
-			metricName: "not exist",
+			metricId:   "not exist",
 			metricType: metric.CounterType,
 			ok:         false,
 			want:       "",
@@ -173,7 +173,7 @@ func TestMetricService_GetValue(t *testing.T) {
 		},
 		{
 			name:       "not empty counter value",
-			metricName: "test",
+			metricId:   "test",
 			metricType: metric.CounterType,
 			ok:         true,
 			want:       "10",
@@ -181,7 +181,7 @@ func TestMetricService_GetValue(t *testing.T) {
 		},
 		{
 			name:       "empty gauge value",
-			metricName: "not exist",
+			metricId:   "not exist",
 			metricType: metric.GaugeType,
 			ok:         false,
 			want:       "",
@@ -189,7 +189,7 @@ func TestMetricService_GetValue(t *testing.T) {
 		},
 		{
 			name:       "not empty gauge value",
-			metricName: "test",
+			metricId:   "test",
 			metricType: metric.GaugeType,
 			ok:         true,
 			want:       "1.1",
@@ -202,7 +202,7 @@ func TestMetricService_GetValue(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, ok, err := s.GetValue(tt.metricType, tt.metricName)
+			got, ok, err := s.GetValue(tt.metricType, tt.metricId)
 
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -217,14 +217,14 @@ func TestMetricService_GetValue(t *testing.T) {
 }
 
 func (s mockMemStorage) Set(_ metric.Type, _ string, _ interface{}) {}
-func (s mockMemStorage) Get(mType metric.Type, key string) (val interface{}, ok bool) {
+func (s mockMemStorage) Get(mType metric.Type, id string) (val interface{}, ok bool) {
 	switch mType {
 	case metric.CounterType:
-		if key == "test" {
+		if id == "test" {
 			return int64(10), true
 		}
 	case metric.GaugeType:
-		if key == "test" {
+		if id == "test" {
 			return 1.1, true
 		}
 	}
