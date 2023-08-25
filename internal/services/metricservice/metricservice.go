@@ -20,9 +20,9 @@ type MetricService struct {
 }
 
 type memStorage interface {
-	Set(namespace string, key string, val interface{})
-	Get(namespace string, key string) (val interface{}, ok bool)
-	GetValuesByNamespace(namespace string) (values map[string]interface{}, ok bool)
+	Set(mType metric.Type, key string, val interface{})
+	Get(mType metric.Type, key string) (val interface{}, ok bool)
+	GetAllByType(mType metric.Type) (values map[string]interface{}, ok bool)
 }
 
 func New(s memStorage, storeCfg *config.StoreConfig, log *logger.Logger) (*MetricService, error) {
@@ -48,16 +48,15 @@ func New(s memStorage, storeCfg *config.StoreConfig, log *logger.Logger) (*Metri
 func (s *MetricService) Update(mm *metric.Metrics) *metric.Metrics {
 	switch mm.MType {
 	case metric.GaugeType:
-		s.storage.Set(mm.MType.ToString(), mm.ID, *mm.Value)
+		s.storage.Set(mm.MType, mm.ID, *mm.Value)
 	case metric.CounterType:
-		mTypeAsStr := mm.MType.ToString()
-		existValue, ok := s.storage.Get(mTypeAsStr, mm.ID)
+		existValue, ok := s.storage.Get(mm.MType, mm.ID)
 
 		if ok {
 			*mm.Delta += existValue.(int64)
 		}
 
-		s.storage.Set(mTypeAsStr, mm.ID, *mm.Delta)
+		s.storage.Set(mm.MType, mm.ID, *mm.Delta)
 	}
 
 	s.sync()
@@ -68,7 +67,7 @@ func (s *MetricService) Update(mm *metric.Metrics) *metric.Metrics {
 func (s *MetricService) Get(mm *metric.Metrics) *metric.Metrics {
 	mm.ValueInit()
 
-	value, ok := s.storage.Get(mm.MType.ToString(), mm.ID)
+	value, ok := s.storage.Get(mm.MType, mm.ID)
 
 	if !ok {
 		return mm
@@ -92,7 +91,7 @@ func (s *MetricService) GetValues(mType metric.Type) (map[string]string, error) 
 		return s.getCounterValues()
 	}
 
-	return map[string]string(nil), errors.New("unexpected metric type: " + mType.ToString())
+	return map[string]string(nil), errors.New("unexpected metricservice type: " + mType.ToString())
 }
 
 func (s *MetricService) GetValue(mType metric.Type, name string) (value string, ok bool, err error) {
@@ -103,11 +102,11 @@ func (s *MetricService) GetValue(mType metric.Type, name string) (value string, 
 		return s.getCounterValue(name)
 	}
 
-	return "", false, errors.New("unexpected metric type: " + mType.ToString())
+	return "", false, errors.New("unexpected metricservice type: " + mType.ToString())
 }
 
 func (s *MetricService) getGaugeValues() (map[string]string, error) {
-	values, ok := s.storage.GetValuesByNamespace(metric.GaugeType.ToString())
+	values, ok := s.storage.GetAllByType(metric.GaugeType)
 
 	strValues := make(map[string]string)
 
@@ -123,7 +122,7 @@ func (s *MetricService) getGaugeValues() (map[string]string, error) {
 }
 
 func (s *MetricService) getCounterValues() (map[string]string, error) {
-	values, ok := s.storage.GetValuesByNamespace(metric.CounterType.ToString())
+	values, ok := s.storage.GetAllByType(metric.CounterType)
 
 	strValues := make(map[string]string)
 
@@ -139,10 +138,10 @@ func (s *MetricService) getCounterValues() (map[string]string, error) {
 }
 
 func (s *MetricService) getGaugeValue(name string) (strValue string, ok bool, err error) {
-	value, ok := s.storage.Get(metric.GaugeType.ToString(), name)
+	value, ok := s.storage.Get(metric.GaugeType, name)
 
 	if !ok {
-		return "", ok, errors.New("metric " + name + " not found")
+		return "", ok, errors.New("metricservice " + name + " not found")
 	}
 
 	strValue = fmt.Sprintf("%g", value.(float64))
@@ -151,10 +150,10 @@ func (s *MetricService) getGaugeValue(name string) (strValue string, ok bool, er
 }
 
 func (s *MetricService) getCounterValue(name string) (strValue string, ok bool, err error) {
-	value, ok := s.storage.Get(metric.CounterType.ToString(), name)
+	value, ok := s.storage.Get(metric.CounterType, name)
 
 	if !ok {
-		return "", ok, errors.New("metric " + name + " not found")
+		return "", ok, errors.New("metricservice " + name + " not found")
 	}
 
 	strValue = strconv.Itoa(int(value.(int64)))
@@ -232,7 +231,7 @@ func (s *MetricService) store() error {
 }
 
 func (s *MetricService) getAll() []metric.Metrics {
-	values, ok := s.storage.GetValuesByNamespace(metric.CounterType.ToString())
+	values, ok := s.storage.GetAllByType(metric.CounterType)
 
 	var mSlice []metric.Metrics
 
@@ -248,7 +247,7 @@ func (s *MetricService) getAll() []metric.Metrics {
 		}
 	}
 
-	values, ok = s.storage.GetValuesByNamespace(metric.GaugeType.ToString())
+	values, ok = s.storage.GetAllByType(metric.GaugeType)
 
 	if ok {
 		for k, v := range values {

@@ -216,14 +216,14 @@ func TestMetricService_GetValue(t *testing.T) {
 	}
 }
 
-func (s mockMemStorage) Set(_ string, _ string, _ interface{}) {}
-func (s mockMemStorage) Get(namespace string, key string) (val interface{}, ok bool) {
-	switch namespace {
-	case metric.CounterType.ToString():
+func (s mockMemStorage) Set(_ metric.Type, _ string, _ interface{}) {}
+func (s mockMemStorage) Get(mType metric.Type, key string) (val interface{}, ok bool) {
+	switch mType {
+	case metric.CounterType:
 		if key == "test" {
 			return int64(10), true
 		}
-	case metric.GaugeType.ToString():
+	case metric.GaugeType:
 		if key == "test" {
 			return 1.1, true
 		}
@@ -231,13 +231,13 @@ func (s mockMemStorage) Get(namespace string, key string) (val interface{}, ok b
 	return nil, false
 }
 
-func (s mockMemStorage) GetValuesByNamespace(namespace string) (values map[string]interface{}, ok bool) {
-	switch namespace {
-	case metric.CounterType.ToString():
+func (s mockMemStorage) GetAllByType(mType metric.Type) (values map[string]interface{}, ok bool) {
+	switch mType {
+	case metric.CounterType:
 		return map[string]interface{}{
 			"test": int64(10),
 		}, true
-	case metric.GaugeType.ToString():
+	case metric.GaugeType:
 		return map[string]interface{}{
 			"test": 1.1,
 		}, true

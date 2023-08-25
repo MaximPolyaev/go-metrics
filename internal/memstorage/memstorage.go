@@ -1,28 +1,30 @@
 package memstorage
 
+import "github.com/MaximPolyaev/go-metrics/internal/metric"
+
 type MemStorage struct {
-	values map[string]map[string]interface{}
+	values map[metric.Type]map[string]interface{}
 }
 
 func New() MemStorage {
-	return MemStorage{values: make(map[string]map[string]interface{})}
+	return MemStorage{values: make(map[metric.Type]map[string]interface{})}
 }
 
-func (s MemStorage) Set(namespace string, key string, val interface{}) {
-	if _, ok := s.values[namespace]; !ok {
-		s.values[namespace] = make(map[string]interface{})
+func (s MemStorage) Set(mType metric.Type, key string, val interface{}) {
+	if _, ok := s.values[mType]; !ok {
+		s.values[mType] = make(map[string]interface{})
 	}
 
-	s.values[namespace][key] = val
+	s.values[mType][key] = val
 }
 
-func (s MemStorage) Get(namespace string, key string) (val interface{}, ok bool) {
-	val, ok = s.values[namespace][key]
+func (s MemStorage) Get(mType metric.Type, key string) (val interface{}, ok bool) {
+	val, ok = s.values[mType][key]
 	return
 }
 
-func (s MemStorage) GetValuesByNamespace(namespace string) (values map[string]interface{}, ok bool) {
-	values, ok = s.values[namespace]
+func (s MemStorage) GetAllByType(mType metric.Type) (values map[string]interface{}, ok bool) {
+	values, ok = s.values[mType]
 
 	return
 }

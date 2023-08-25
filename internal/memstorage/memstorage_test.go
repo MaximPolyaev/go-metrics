@@ -3,16 +3,17 @@ package memstorage
 import (
 	"testing"
 
+	"github.com/MaximPolyaev/go-metrics/internal/metric"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_memStorage_Get(t *testing.T) {
 	s := New()
-	s.Set("ns test", "test key", 1)
+	s.Set(metric.CounterType, "test key", 1)
 
 	type args struct {
-		namespace string
-		key       string
+		mType metric.Type
+		key   string
 	}
 
 	tests := []struct {
@@ -24,26 +25,26 @@ func Test_memStorage_Get(t *testing.T) {
 		{
 			name: "test case #1",
 			args: args{
-				namespace: "ns test",
-				key:       "test key",
+				mType: metric.GaugeType,
+				key:   "test key",
 			},
-			wantVal: 1,
-			wantOk:  true,
+			wantVal: nil,
+			wantOk:  false,
 		},
 		{
 			name: "test case #2",
 			args: args{
-				namespace: "ns test 2",
-				key:       "test key",
+				mType: metric.CounterType,
+				key:   "test key",
 			},
-			wantVal: nil,
-			wantOk:  false,
+			wantVal: 1,
+			wantOk:  true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotVal, gotOk := s.Get(tt.args.namespace, tt.args.key)
+			gotVal, gotOk := s.Get(tt.args.mType, tt.args.key)
 			assert.Equal(t, tt.wantVal, gotVal)
 			assert.Equal(t, tt.wantOk, gotOk)
 		})
@@ -52,23 +53,23 @@ func Test_memStorage_Get(t *testing.T) {
 
 func Test_memStorage_GetValuesByNamespace(t *testing.T) {
 	s := New()
-	s.Set("ns test", "test key", 1)
+	s.Set(metric.CounterType, "test key", 1)
 
 	tests := []struct {
 		name       string
-		namespace  string
+		mType      metric.Type
 		wantValues map[string]interface{}
 		wantOk     bool
 	}{
 		{
 			name:       "test case #1",
-			namespace:  "not exists",
+			mType:      metric.GaugeType,
 			wantValues: map[string]interface{}(nil),
 			wantOk:     false,
 		},
 		{
-			name:      "test case #2",
-			namespace: "ns test",
+			name:  "test case #2",
+			mType: metric.CounterType,
 			wantValues: map[string]interface{}{
 				"test key": 1,
 			},
@@ -78,7 +79,7 @@ func Test_memStorage_GetValuesByNamespace(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotValues, gotOk := s.GetValuesByNamespace(tt.namespace)
+			gotValues, gotOk := s.GetAllByType(tt.mType)
 			assert.Equal(t, tt.wantValues, gotValues)
 			assert.Equal(t, tt.wantOk, gotOk)
 		})

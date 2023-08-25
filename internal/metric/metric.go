@@ -31,7 +31,7 @@ func (t Type) Validate() error {
 		return nil
 	}
 
-	return errors.New("invalid metric type: " + t.ToString())
+	return errors.New("invalid metricservice type: " + t.ToString())
 }
 
 func (m *Metrics) ValueInit() {
@@ -45,7 +45,7 @@ func (m *Metrics) ValueInit() {
 
 func (m *Metrics) Validate() error {
 	if len(m.ID) == 0 {
-		return errors.New("metric ID must be not empty")
+		return errors.New("metricservice ID must be not empty")
 	}
 
 	if err := m.MType.Validate(); err != nil {
@@ -63,11 +63,11 @@ func (m *Metrics) ValidateWithValue() error {
 	switch m.MType {
 	case CounterType:
 		if m.Delta == nil {
-			return fmt.Errorf("empty value for metric %s type", m.MType.ToString())
+			return fmt.Errorf("empty value for metricservice %s type", m.MType.ToString())
 		}
 	case GaugeType:
 		if m.Value == nil {
-			return fmt.Errorf("empty value for metric %s type", m.MType.ToString())
+			return fmt.Errorf("empty value for metricservice %s type", m.MType.ToString())
 		}
 	}
 

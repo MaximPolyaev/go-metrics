@@ -58,7 +58,7 @@ func (c *HTTPClient) updateMetric(mm *metric.Metrics) error {
 
 		defer func() { _ = resp.Body.Close() }()
 
-		errorMsg := "not update metric " + mm.ID + ", err: "
+		errorMsg := "not update metricservice " + mm.ID + ", err: "
 
 		if err != nil {
 			errorMsg += err.Error()

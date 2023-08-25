@@ -30,10 +30,10 @@ func run() error {
 		return err
 	}
 
-	store := memstorage.New()
+	memStorage := memstorage.New()
 	lg := logger.New(os.Stdout)
 
-	metricService, err := metricservice.New(store, storeCfg, lg)
+	metricService, err := metricservice.New(memStorage, storeCfg, lg)
 	if err != nil {
 		return err
 	}
