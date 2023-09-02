@@ -27,6 +27,10 @@ func (s *Storage) GetAll() ([]metric.Metric, error) {
 		return mSlice, err
 	}
 
+	if len(data) == 0 {
+		return mSlice, nil
+	}
+
 	if err := json.Unmarshal(data, &mSlice); err != nil {
 		return nil, err
 	}
