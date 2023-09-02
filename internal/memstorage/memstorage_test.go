@@ -10,8 +10,7 @@ import (
 func Test_memStorage_Get(t *testing.T) {
 	s := New()
 
-	var delta int64
-	delta = 1
+	delta := int64(1)
 
 	wantVal := metric.Metric{
 		ID:    "test id",
@@ -64,8 +63,7 @@ func Test_memStorage_Get(t *testing.T) {
 func Test_memStorage_GetValuesByNamespace(t *testing.T) {
 	s := New()
 
-	var delta int64
-	delta = 1
+	delta := int64(1)
 
 	wantVal := metric.Metric{
 		ID:    "test id",
