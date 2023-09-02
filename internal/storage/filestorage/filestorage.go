@@ -5,9 +5,11 @@ import (
 	"errors"
 	"github.com/MaximPolyaev/go-metrics/internal/metric"
 	"os"
+	"sync"
 )
 
 type Storage struct {
+	mu       sync.RWMutex
 	filePath string
 }
 
@@ -16,6 +18,9 @@ func New(filePath string) *Storage {
 }
 
 func (s *Storage) GetAll() ([]metric.Metric, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
 	var mSlice []metric.Metric
 
 	data, err := os.ReadFile(s.filePath)
@@ -39,6 +44,9 @@ func (s *Storage) GetAll() ([]metric.Metric, error) {
 }
 
 func (s *Storage) SetAll(mSlice []metric.Metric) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	data, err := json.MarshalIndent(mSlice, "", " ")
 	if err != nil {
 		return err
