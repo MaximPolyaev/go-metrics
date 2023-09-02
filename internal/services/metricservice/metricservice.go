@@ -66,7 +66,7 @@ func (s *MetricService) Get(mm *metric.Metric) (*metric.Metric, bool) {
 	existMm, ok := s.storage.Get(mm.MType, mm.ID)
 
 	if !ok {
-		return nil, false
+		return mm, false
 	}
 
 	return &existMm, true
