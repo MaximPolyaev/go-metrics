@@ -35,6 +35,7 @@ func run() error {
 
 	metricService, err := metricservice.New(memStorage, storeCfg, lg)
 	if err != nil {
+
 		return err
 	}
 

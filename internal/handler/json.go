@@ -86,7 +86,10 @@ func (h *Handler) GetValueByJSONFunc() http.HandlerFunc {
 			return
 		}
 
-		mm = h.metricService.Get(mm)
+		mm, ok := h.metricService.Get(mm)
+		if !ok {
+			mm.ValueInit()
+		}
 
 		resp, err := json.Marshal(mm)
 		if err != nil {

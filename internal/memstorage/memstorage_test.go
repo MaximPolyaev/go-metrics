@@ -9,7 +9,17 @@ import (
 
 func Test_memStorage_Get(t *testing.T) {
 	s := New()
-	s.Set(metric.CounterType, "test id", 1)
+
+	var delta int64
+	delta = 1
+
+	wantVal := metric.Metric{
+		ID:    "test id",
+		MType: metric.CounterType,
+		Delta: &delta,
+	}
+
+	s.Set(metric.CounterType, wantVal)
 
 	type args struct {
 		mType metric.Type
@@ -28,7 +38,7 @@ func Test_memStorage_Get(t *testing.T) {
 				mType: metric.GaugeType,
 				id:    "test id",
 			},
-			wantVal: nil,
+			wantVal: metric.Metric{},
 			wantOk:  false,
 		},
 		{
@@ -37,7 +47,7 @@ func Test_memStorage_Get(t *testing.T) {
 				mType: metric.CounterType,
 				id:    "test id",
 			},
-			wantVal: 1,
+			wantVal: wantVal,
 			wantOk:  true,
 		},
 	}
@@ -53,25 +63,35 @@ func Test_memStorage_Get(t *testing.T) {
 
 func Test_memStorage_GetValuesByNamespace(t *testing.T) {
 	s := New()
-	s.Set(metric.CounterType, "test id", 1)
+
+	var delta int64
+	delta = 1
+
+	wantVal := metric.Metric{
+		ID:    "test id",
+		MType: metric.CounterType,
+		Delta: &delta,
+	}
+
+	s.Set(metric.CounterType, wantVal)
 
 	tests := []struct {
 		name       string
 		mType      metric.Type
-		wantValues map[string]interface{}
+		wantValues map[string]metric.Metric
 		wantOk     bool
 	}{
 		{
 			name:       "test case #1",
 			mType:      metric.GaugeType,
-			wantValues: map[string]interface{}(nil),
+			wantValues: map[string]metric.Metric(nil),
 			wantOk:     false,
 		},
 		{
 			name:  "test case #2",
 			mType: metric.CounterType,
-			wantValues: map[string]interface{}{
-				"test id": 1,
+			wantValues: map[string]metric.Metric{
+				"test id": wantVal,
 			},
 			wantOk: true,
 		},

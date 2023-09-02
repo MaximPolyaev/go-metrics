@@ -119,127 +119,33 @@ func TestMetricService_Update(t *testing.T) {
 	}
 }
 
-func TestMetricService_GetValues(t *testing.T) {
-	tests := []struct {
-		name       string
-		metricType metric.Type
-		want       map[string]string
-	}{
-		{
-			name:       "counter values",
-			metricType: metric.CounterType,
-			want: map[string]string{
-				"test": "10",
-			},
-		},
-		{
-			name:       "gauge values",
-			metricType: metric.GaugeType,
-			want: map[string]string{
-				"test": "1.1",
-			},
-		},
+func (s mockMemStorage) Set(_ metric.Type, _ metric.Metric) {}
+func (s mockMemStorage) Get(mType metric.Type, id string) (val metric.Metric, ok bool) {
+	metricMap, ok := s.GetAllByType(mType)
+	if !ok {
+		return
 	}
 
-	s, err := New(mockMemStorage{}, nil, nil)
-	assert.NoError(t, err)
+	val, ok = metricMap[id]
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := s.GetValues(tt.metricType)
-
-			assert.NoError(t, err)
-			assert.Equal(t, tt.want, got)
-		})
-	}
+	return
 }
 
-func TestMetricService_GetValue(t *testing.T) {
-	tests := []struct {
-		name       string
-		metricID   string
-		metricType metric.Type
-		ok         bool
-		want       string
-		wantErr    bool
-	}{
-		{
-			name:       "empty counter value",
-			metricID:   "not exist",
-			metricType: metric.CounterType,
-			ok:         false,
-			want:       "",
-			wantErr:    true,
-		},
-		{
-			name:       "not empty counter value",
-			metricID:   "test",
-			metricType: metric.CounterType,
-			ok:         true,
-			want:       "10",
-			wantErr:    false,
-		},
-		{
-			name:       "empty gauge value",
-			metricID:   "not exist",
-			metricType: metric.GaugeType,
-			ok:         false,
-			want:       "",
-			wantErr:    true,
-		},
-		{
-			name:       "not empty gauge value",
-			metricID:   "test",
-			metricType: metric.GaugeType,
-			ok:         true,
-			want:       "1.1",
-			wantErr:    false,
-		},
-	}
+func (s mockMemStorage) GetAllByType(mType metric.Type) (values map[string]metric.Metric, ok bool) {
+	var delta int64
+	var value float64
 
-	s, err := New(mockMemStorage{}, nil, nil)
-	assert.NoError(t, err)
+	delta = 10
+	value = 1.1
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, ok, err := s.GetValue(tt.metricType, tt.metricID)
-
-			if tt.wantErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
-
-			assert.Equal(t, tt.ok, ok)
-			assert.Equal(t, tt.want, got)
-		})
-	}
-}
-
-func (s mockMemStorage) Set(_ metric.Type, _ string, _ interface{}) {}
-func (s mockMemStorage) Get(mType metric.Type, id string) (val interface{}, ok bool) {
 	switch mType {
 	case metric.CounterType:
-		if id == "test" {
-			return int64(10), true
-		}
-	case metric.GaugeType:
-		if id == "test" {
-			return 1.1, true
-		}
-	}
-	return nil, false
-}
-
-func (s mockMemStorage) GetAllByType(mType metric.Type) (values map[string]interface{}, ok bool) {
-	switch mType {
-	case metric.CounterType:
-		return map[string]interface{}{
-			"test": int64(10),
+		return map[string]metric.Metric{
+			"test": {ID: "test", MType: metric.CounterType, Delta: &delta},
 		}, true
 	case metric.GaugeType:
-		return map[string]interface{}{
-			"test": 1.1,
+		return map[string]metric.Metric{
+			"test": {ID: "test", MType: metric.GaugeType, Value: &value},
 		}, true
 	}
 

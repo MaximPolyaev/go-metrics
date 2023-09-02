@@ -3,6 +3,7 @@ package metric
 import (
 	"errors"
 	"fmt"
+	"strconv"
 )
 
 type Type string
@@ -19,6 +20,10 @@ const (
 	CounterType = Type("counter")
 )
 
+func Types() [2]Type {
+	return [2]Type{GaugeType, CounterType}
+}
+
 func (t Type) ToString() string {
 	return string(t)
 }
@@ -31,7 +36,7 @@ func (t Type) Validate() error {
 		return nil
 	}
 
-	return errors.New("invalid metricservice type: " + t.ToString())
+	return errors.New("invalid metric type: " + t.ToString())
 }
 
 func (m *Metric) ValueInit() {
@@ -72,4 +77,19 @@ func (m *Metric) ValidateWithValue() error {
 	}
 
 	return nil
+}
+
+func (m *Metric) GetValueAsStr() string {
+	switch m.MType {
+	case CounterType:
+		if m.Delta != nil {
+			return strconv.Itoa(int(*m.Delta))
+		}
+	case GaugeType:
+		if m.Value != nil {
+			return fmt.Sprintf("%g", *m.Value)
+		}
+	}
+
+	return ""
 }

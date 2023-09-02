@@ -3,9 +3,7 @@ package metricservice
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/MaximPolyaev/go-metrics/internal/config"
@@ -20,9 +18,9 @@ type MetricService struct {
 }
 
 type memStorage interface {
-	Set(mType metric.Type, id string, val interface{})
-	Get(mType metric.Type, id string) (val interface{}, ok bool)
-	GetAllByType(mType metric.Type) (values map[string]interface{}, ok bool)
+	Set(mType metric.Type, val metric.Metric)
+	Get(mType metric.Type, id string) (val metric.Metric, ok bool)
+	GetAllByType(mType metric.Type) (values map[string]metric.Metric, ok bool)
 }
 
 func New(s memStorage, storeCfg *config.StoreConfig, log *logger.Logger) (*MetricService, error) {
@@ -48,15 +46,15 @@ func New(s memStorage, storeCfg *config.StoreConfig, log *logger.Logger) (*Metri
 func (s *MetricService) Update(mm *metric.Metric) *metric.Metric {
 	switch mm.MType {
 	case metric.GaugeType:
-		s.storage.Set(mm.MType, mm.ID, *mm.Value)
+		s.storage.Set(mm.MType, *mm)
 	case metric.CounterType:
-		existValue, ok := s.storage.Get(mm.MType, mm.ID)
+		existDelta, ok := s.storage.Get(mm.MType, mm.ID)
 
 		if ok {
-			*mm.Delta += existValue.(int64)
+			*mm.Delta += *existDelta.Delta
 		}
 
-		s.storage.Set(mm.MType, mm.ID, *mm.Delta)
+		s.storage.Set(mm.MType, *mm)
 	}
 
 	s.sync()
@@ -64,101 +62,29 @@ func (s *MetricService) Update(mm *metric.Metric) *metric.Metric {
 	return mm
 }
 
-func (s *MetricService) Get(mm *metric.Metric) *metric.Metric {
-	mm.ValueInit()
-
-	value, ok := s.storage.Get(mm.MType, mm.ID)
+func (s *MetricService) Get(mm *metric.Metric) (*metric.Metric, bool) {
+	existMm, ok := s.storage.Get(mm.MType, mm.ID)
 
 	if !ok {
-		return mm
+		return nil, false
 	}
 
-	switch mm.MType {
-	case metric.GaugeType:
-		*mm.Value = value.(float64)
-	case metric.CounterType:
-		*mm.Delta = value.(int64)
-	}
-
-	return mm
+	return &existMm, true
 }
 
-func (s *MetricService) GetValues(mType metric.Type) (map[string]string, error) {
-	switch mType {
-	case metric.GaugeType:
-		return s.getGaugeValues()
-	case metric.CounterType:
-		return s.getCounterValues()
+func (s *MetricService) GetAll() []metric.Metric {
+	var mSlice []metric.Metric
+
+	for _, mType := range metric.Types() {
+		metricMap, ok := s.storage.GetAllByType(mType)
+		if ok {
+			for _, m := range metricMap {
+				mSlice = append(mSlice, m)
+			}
+		}
 	}
 
-	return map[string]string(nil), errors.New("unexpected metricservice type: " + mType.ToString())
-}
-
-func (s *MetricService) GetValue(mType metric.Type, name string) (value string, ok bool, err error) {
-	switch mType {
-	case metric.GaugeType:
-		return s.getGaugeValue(name)
-	case metric.CounterType:
-		return s.getCounterValue(name)
-	}
-
-	return "", false, errors.New("unexpected metricservice type: " + mType.ToString())
-}
-
-func (s *MetricService) getGaugeValues() (map[string]string, error) {
-	values, ok := s.storage.GetAllByType(metric.GaugeType)
-
-	strValues := make(map[string]string)
-
-	if !ok {
-		return strValues, nil
-	}
-
-	for k, value := range values {
-		strValues[k] = fmt.Sprintf("%g", value.(float64))
-	}
-
-	return strValues, nil
-}
-
-func (s *MetricService) getCounterValues() (map[string]string, error) {
-	values, ok := s.storage.GetAllByType(metric.CounterType)
-
-	strValues := make(map[string]string)
-
-	if !ok {
-		return strValues, nil
-	}
-
-	for k, value := range values {
-		strValues[k] = strconv.Itoa(int(value.(int64)))
-	}
-
-	return strValues, nil
-}
-
-func (s *MetricService) getGaugeValue(name string) (strValue string, ok bool, err error) {
-	value, ok := s.storage.Get(metric.GaugeType, name)
-
-	if !ok {
-		return "", ok, errors.New("metricservice " + name + " not found")
-	}
-
-	strValue = fmt.Sprintf("%g", value.(float64))
-
-	return
-}
-
-func (s *MetricService) getCounterValue(name string) (strValue string, ok bool, err error) {
-	value, ok := s.storage.Get(metric.CounterType, name)
-
-	if !ok {
-		return "", ok, errors.New("metricservice " + name + " not found")
-	}
-
-	strValue = strconv.Itoa(int(value.(int64)))
-
-	return
+	return mSlice
 }
 
 func (s *MetricService) async() {
@@ -217,7 +143,7 @@ func (s *MetricService) restore() error {
 }
 
 func (s *MetricService) store() error {
-	mSlice := s.getAll()
+	mSlice := s.GetAll()
 	if mSlice == nil {
 		return nil
 	}
@@ -228,38 +154,4 @@ func (s *MetricService) store() error {
 	}
 
 	return os.WriteFile(*s.storeCfg.FileStoragePath, data, 0666)
-}
-
-func (s *MetricService) getAll() []metric.Metric {
-	values, ok := s.storage.GetAllByType(metric.CounterType)
-
-	var mSlice []metric.Metric
-
-	if ok {
-		for k, v := range values {
-			tmpV := v.(int64)
-
-			mSlice = append(mSlice, metric.Metric{
-				ID:    k,
-				MType: metric.CounterType,
-				Delta: &tmpV,
-			})
-		}
-	}
-
-	values, ok = s.storage.GetAllByType(metric.GaugeType)
-
-	if ok {
-		for k, v := range values {
-			tmpV := v.(float64)
-
-			mSlice = append(mSlice, metric.Metric{
-				ID:    k,
-				MType: metric.GaugeType,
-				Value: &tmpV,
-			})
-		}
-	}
-
-	return mSlice
 }

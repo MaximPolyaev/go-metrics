@@ -89,7 +89,7 @@ func TestHandler_MainFunc(t *testing.T) {
 
 	str := w.Body.String()
 
-	assert.Contains(t, str, "<ul><li>test: 1.1</li><li>test: 10</li></ul>")
+	assert.Contains(t, str, "<ul><li>test: 10</li><li>test: 1.1</li></ul>")
 }
 
 func TestHandler_GetValue(t *testing.T) {
