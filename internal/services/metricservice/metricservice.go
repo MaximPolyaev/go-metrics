@@ -12,9 +12,9 @@ import (
 )
 
 type MetricService struct {
-	storage  memStorage
-	storeCfg *config.StoreConfig
-	log      *logger.Logger
+	memStorage memStorage
+	storeCfg   *config.StoreConfig
+	log        *logger.Logger
 }
 
 type memStorage interface {
@@ -23,11 +23,11 @@ type memStorage interface {
 	GetAllByType(mType metric.Type) (values map[string]metric.Metric, ok bool)
 }
 
-func New(s memStorage, storeCfg *config.StoreConfig, log *logger.Logger) (*MetricService, error) {
+func New(memStorage memStorage, storeCfg *config.StoreConfig, log *logger.Logger) (*MetricService, error) {
 	ms := &MetricService{
-		storage:  s,
-		storeCfg: storeCfg,
-		log:      log,
+		memStorage: memStorage,
+		storeCfg:   storeCfg,
+		log:        log,
 	}
 
 	if storeCfg != nil {
@@ -46,15 +46,15 @@ func New(s memStorage, storeCfg *config.StoreConfig, log *logger.Logger) (*Metri
 func (s *MetricService) Update(mm *metric.Metric) *metric.Metric {
 	switch mm.MType {
 	case metric.GaugeType:
-		s.storage.Set(mm.MType, *mm)
+		s.memStorage.Set(mm.MType, *mm)
 	case metric.CounterType:
-		existDelta, ok := s.storage.Get(mm.MType, mm.ID)
+		existDelta, ok := s.memStorage.Get(mm.MType, mm.ID)
 
 		if ok {
 			*mm.Delta += *existDelta.Delta
 		}
 
-		s.storage.Set(mm.MType, *mm)
+		s.memStorage.Set(mm.MType, *mm)
 	}
 
 	s.sync()
@@ -63,7 +63,7 @@ func (s *MetricService) Update(mm *metric.Metric) *metric.Metric {
 }
 
 func (s *MetricService) Get(mm *metric.Metric) (*metric.Metric, bool) {
-	existMm, ok := s.storage.Get(mm.MType, mm.ID)
+	existMm, ok := s.memStorage.Get(mm.MType, mm.ID)
 
 	if !ok {
 		return mm, false
@@ -76,7 +76,7 @@ func (s *MetricService) GetAll() []metric.Metric {
 	var mSlice []metric.Metric
 
 	for _, mType := range metric.Types() {
-		metricMap, ok := s.storage.GetAllByType(mType)
+		metricMap, ok := s.memStorage.GetAllByType(mType)
 		if ok {
 			for _, m := range metricMap {
 				mSlice = append(mSlice, m)
