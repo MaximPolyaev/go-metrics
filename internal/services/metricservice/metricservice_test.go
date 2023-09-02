@@ -90,7 +90,7 @@ func TestMetricService_Update(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s, err := New(mockMemStorage{}, nil, nil)
+			s, err := New(mockMemStorage{}, nil, nil, nil)
 			assert.NoError(t, err)
 
 			mm := metric.Metric{

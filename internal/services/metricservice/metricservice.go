@@ -1,9 +1,6 @@
 package metricservice
 
 import (
-	"encoding/json"
-	"errors"
-	"os"
 	"time"
 
 	"github.com/MaximPolyaev/go-metrics/internal/config"
@@ -12,9 +9,10 @@ import (
 )
 
 type MetricService struct {
-	memStorage memStorage
-	storeCfg   *config.StoreConfig
-	log        *logger.Logger
+	memStorage  memStorage
+	fileStorage fileStorage
+	storeCfg    *config.StoreConfig
+	log         *logger.Logger
 }
 
 type memStorage interface {
@@ -23,11 +21,22 @@ type memStorage interface {
 	GetAllByType(mType metric.Type) (values map[string]metric.Metric, ok bool)
 }
 
-func New(memStorage memStorage, storeCfg *config.StoreConfig, log *logger.Logger) (*MetricService, error) {
+type fileStorage interface {
+	SetAll([]metric.Metric) error
+	GetAll() ([]metric.Metric, error)
+}
+
+func New(
+	memStorage memStorage,
+	fileStorage fileStorage,
+	storeCfg *config.StoreConfig,
+	log *logger.Logger,
+) (*MetricService, error) {
 	ms := &MetricService{
-		memStorage: memStorage,
-		storeCfg:   storeCfg,
-		log:        log,
+		memStorage:  memStorage,
+		fileStorage: fileStorage,
+		storeCfg:    storeCfg,
+		log:         log,
 	}
 
 	if storeCfg != nil {
@@ -116,18 +125,8 @@ func (s *MetricService) restore() error {
 		return nil
 	}
 
-	data, err := os.ReadFile(*s.storeCfg.FileStoragePath)
+	mSlice, err := s.fileStorage.GetAll()
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return nil
-		}
-
-		return err
-	}
-
-	var mSlice []metric.Metric
-
-	if err := json.Unmarshal(data, &mSlice); err != nil {
 		return err
 	}
 
@@ -148,10 +147,5 @@ func (s *MetricService) store() error {
 		return nil
 	}
 
-	data, err := json.MarshalIndent(mSlice, "", " ")
-	if err != nil {
-		return nil
-	}
-
-	return os.WriteFile(*s.storeCfg.FileStoragePath, data, 0666)
+	return s.fileStorage.SetAll(mSlice)
 }

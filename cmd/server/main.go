@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/MaximPolyaev/go-metrics/internal/storage/filestorage"
+	"github.com/MaximPolyaev/go-metrics/internal/storage/memstorage"
 	"log"
 	"net/http"
 	"os"
@@ -8,7 +10,6 @@ import (
 	"github.com/MaximPolyaev/go-metrics/internal/config"
 	"github.com/MaximPolyaev/go-metrics/internal/handler"
 	"github.com/MaximPolyaev/go-metrics/internal/logger"
-	"github.com/MaximPolyaev/go-metrics/internal/memstorage"
 	"github.com/MaximPolyaev/go-metrics/internal/router"
 	"github.com/MaximPolyaev/go-metrics/internal/services/metricservice"
 )
@@ -31,9 +32,10 @@ func run() error {
 	}
 
 	memStorage := memstorage.New()
-	lg := logger.New(os.Stdout)
+	fileStorage := filestorage.New(*storeCfg.FileStoragePath)
 
-	metricService, err := metricservice.New(memStorage, storeCfg, lg)
+	lg := logger.New(os.Stdout)
+	metricService, err := metricservice.New(memStorage, fileStorage, storeCfg, lg)
 	if err != nil {
 
 		return err
