@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/MaximPolyaev/go-metrics/internal/config"
 	"github.com/MaximPolyaev/go-metrics/internal/handler"
@@ -31,18 +33,36 @@ func run() error {
 		return err
 	}
 
-	memStorage := memstorage.New()
-	fileStorage := filestorage.New(*storeCfg.FileStoragePath)
-
 	lg := logger.New(os.Stdout)
-	metricService, err := metricservice.New(memStorage, fileStorage, storeCfg, lg)
+	metricService, err := metricservice.New(
+		memstorage.New(),
+		filestorage.New(*storeCfg.FileStoragePath),
+		storeCfg,
+		lg,
+	)
 	if err != nil {
-
 		return err
 	}
 
 	h := handler.New(metricService)
-	muxRouter := router.CreateRouter(h, lg)
 
-	return http.ListenAndServe(*cfg.Addr, muxRouter)
+	shutdownHandler(metricService)
+
+	return http.ListenAndServe(
+		*cfg.Addr,
+		router.CreateRouter(h, lg),
+	)
+}
+
+func shutdownHandler(s *metricservice.MetricService) {
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		<-sigs
+
+		s.Sync()
+
+		os.Exit(0)
+	}()
 }

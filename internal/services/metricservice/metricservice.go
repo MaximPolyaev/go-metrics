@@ -66,7 +66,9 @@ func (s *MetricService) Update(mm *metric.Metric) *metric.Metric {
 		s.memStorage.Set(mm.MType, *mm)
 	}
 
-	s.sync()
+	if s.storeCfg != nil && *s.storeCfg.StoreInterval == 0 {
+		s.Sync()
+	}
 
 	return mm
 }
@@ -96,6 +98,12 @@ func (s *MetricService) GetAll() []metric.Metric {
 	return mSlice
 }
 
+func (s *MetricService) Sync() {
+	if err := s.store(); err != nil {
+		s.log.Error(err)
+	}
+}
+
 func (s *MetricService) async() {
 	storeInterval := time.NewTicker(time.Duration(*s.storeCfg.StoreInterval) * time.Second)
 
@@ -108,16 +116,6 @@ func (s *MetricService) async() {
 			}
 		}
 	}()
-}
-
-func (s *MetricService) sync() {
-	if s.storeCfg == nil || *s.storeCfg.StoreInterval != 0 {
-		return
-	}
-
-	if err := s.store(); err != nil {
-		s.log.Error(err)
-	}
 }
 
 func (s *MetricService) restore() error {
