@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 )
 
 type bufWriter struct {
@@ -20,6 +21,10 @@ type compressReader struct {
 }
 
 func GzipMiddleware(next http.Handler) http.Handler {
+	gzipPool := sync.Pool{New: func() any {
+		return gzip.NewWriter(io.Discard)
+	}}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		contentEncoding := r.Header.Get("Content-Encoding")
 		sendsGzip := strings.Contains(contentEncoding, "gzip")
@@ -47,17 +52,21 @@ func GzipMiddleware(next http.Handler) http.Handler {
 		if supportsGzip && (contentType == "text/html" || contentType == "application/json") {
 			w.Header().Set("Content-Encoding", "gzip")
 			w.WriteHeader(bw.statusCode)
-			gz := gzip.NewWriter(w)
 
-			if _, err := gz.Write(bw.buf.Bytes()); err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-			}
-
+			gz := gzipPool.Get().(*gzip.Writer)
 			defer func() {
 				if err := gz.Close(); err != nil {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 				}
+
+				gzipPool.Put(gz)
 			}()
+
+			gz.Reset(w)
+
+			if _, err := gz.Write(bw.buf.Bytes()); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
 			return
 		}
 
