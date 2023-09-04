@@ -16,7 +16,7 @@ func main() {
 }
 
 func run() error {
-	cfg := config.NewBaseConfig()
+	cfg := config.NewReportConfig()
 	if err := cfg.Parse(); err != nil {
 		return err
 	}
@@ -33,7 +33,7 @@ func run() error {
 		case <-poolInterval.C:
 			metric.ReadStats(&mStats)
 		case <-reportInterval.C:
-			if err := httpClient.UpdateMetrics(&mStats); err != nil {
+			if err := httpClient.UpdateMetrics(mStats.AsMetrics()); err != nil {
 				log.Println(err)
 			}
 		}

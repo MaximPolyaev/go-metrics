@@ -3,29 +3,38 @@ package router
 import (
 	"net/http"
 
+	"github.com/MaximPolyaev/go-metrics/internal/logger"
+	"github.com/MaximPolyaev/go-metrics/internal/middleware"
 	"github.com/go-chi/chi/v5"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
 )
 
 const (
-	updateAction        = "/update/"
-	valueAction         = "/value/"
-	updateMetricPattern = updateAction + "{type}/{name}/{value}"
-	getMetricPattern    = valueAction + "{type}/{name}"
+	updatePattern       = "/update"
+	valuePattern        = "/value"
+	updateMetricPattern = updatePattern + "/{type}/{name}/{value}"
+	getMetricPattern    = valuePattern + "/{type}/{name}"
 )
 
 type handler interface {
 	UpdateFunc() http.HandlerFunc
 	GetValueFunc() http.HandlerFunc
 	MainFunc() http.HandlerFunc
+	UpdateByJSONFunc() http.HandlerFunc
+	GetValueByJSONFunc() http.HandlerFunc
 }
 
-func CreateRouter(h handler) *chi.Mux {
+func CreateRouter(h handler, log *logger.Logger) *chi.Mux {
 	router := chi.NewRouter()
 
+	router.Use(middleware.GzipMiddleware)
+	router.Use(middleware.WithLogging(log))
+	router.Use(chimiddleware.StripSlashes)
+
+	router.Post(updatePattern, h.UpdateByJSONFunc())
+	router.Post(valuePattern, h.GetValueByJSONFunc())
 	router.Post(updateMetricPattern, h.UpdateFunc())
-	router.Post(updateMetricPattern+"/", h.UpdateFunc())
 	router.Get(getMetricPattern, h.GetValueFunc())
-	router.Get(getMetricPattern+"/", h.GetValueFunc())
 
 	router.Get("/", h.MainFunc())
 

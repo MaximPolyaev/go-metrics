@@ -3,6 +3,7 @@ package handler
 import (
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/MaximPolyaev/go-metrics/internal/html"
 	"github.com/MaximPolyaev/go-metrics/internal/metric"
@@ -14,9 +15,9 @@ type Handler struct {
 }
 
 type metricService interface {
-	Update(mType metric.Type, name string, value string) error
-	GetValues(mType metric.Type) (map[string]string, error)
-	GetValue(mType metric.Type, name string) (value string, ok bool, err error)
+	Update(mm *metric.Metric) *metric.Metric
+	Get(mm *metric.Metric) (*metric.Metric, bool)
+	GetAll() []metric.Metric
 }
 
 func New(mService metricService) *Handler {
@@ -28,33 +29,16 @@ func New(mService metricService) *Handler {
 func (h *Handler) MainFunc() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var list string
-
-		values, err := h.metricService.GetValues(metric.GaugeType)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		for k, v := range values {
-			list += html.Li(k + ": " + v)
-		}
-
-		values, err = h.metricService.GetValues(metric.CounterType)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		for k, v := range values {
-			list += html.Li(k + ": " + v)
+		for _, m := range h.metricService.GetAll() {
+			list += html.Li(m.ID + ": " + m.GetValueAsStr())
 		}
 
 		htmlDocument := html.NewDocument()
 		htmlDocument.SetBody(html.Ul(list))
 
-		_, err = io.WriteString(w, htmlDocument.AsString())
+		w.Header().Set("Content-Type", "text/html")
 
-		if err != nil {
+		if _, err := io.WriteString(w, htmlDocument.AsString()); err != nil {
 			http.Error(w, err.Error(), http.StatusBadGateway)
 			return
 		}
@@ -63,13 +47,36 @@ func (h *Handler) MainFunc() http.HandlerFunc {
 
 func (h *Handler) UpdateFunc() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		mType := metric.Type(chi.URLParam(r, "type"))
-		name := chi.URLParam(r, "name")
+		mm := metric.Metric{
+			ID:    chi.URLParam(r, "name"),
+			MType: metric.Type(chi.URLParam(r, "type")),
+		}
+
 		valueStr := chi.URLParam(r, "value")
 
-		if err := h.metricService.Update(mType, name, valueStr); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+		switch mm.MType {
+		case metric.GaugeType:
+			value, err := strconv.ParseFloat(valueStr, 64)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			mm.Value = &value
+		case metric.CounterType:
+			value, err := strconv.ParseInt(valueStr, 0, 64)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			mm.Delta = &value
 		}
+
+		if err := mm.ValidateWithValue(); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		h.metricService.Update(&mm)
 	}
 }
 
@@ -78,20 +85,19 @@ func (h *Handler) GetValueFunc() http.HandlerFunc {
 		mType := metric.Type(chi.URLParam(r, "type"))
 		name := chi.URLParam(r, "name")
 
-		metricValue, ok, err := h.metricService.GetValue(mType, name)
+		m := metric.Metric{ID: name, MType: mType}
 
-		if err != nil {
-			if ok {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-			} else {
-				http.Error(w, err.Error(), http.StatusNotFound)
-			}
+		if err := m.Validate(); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+
+		metricValue, ok := h.metricService.Get(&m)
+		if !ok {
+			http.Error(w, "metric not found", http.StatusNotFound)
 			return
 		}
 
-		_, err = io.WriteString(w, metricValue)
-
-		if err != nil {
+		if _, err := io.WriteString(w, metricValue.GetValueAsStr()); err != nil {
 			http.Error(w, err.Error(), http.StatusBadGateway)
 		}
 	}

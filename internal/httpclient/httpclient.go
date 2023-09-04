@@ -1,8 +1,10 @@
 package httpclient
 
 import (
+	"bytes"
+	"compress/gzip"
+	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -25,15 +27,9 @@ func NewHTTPClient(baseURL string) *HTTPClient {
 	}
 }
 
-func (c *HTTPClient) UpdateMetrics(stats *metric.Stats) error {
-	for k, v := range stats.GetCounterMap() {
-		if err := c.updateCounterMetric(k, v); err != nil {
-			return err
-		}
-	}
-
-	for k, v := range stats.GetGaugeMap() {
-		if err := c.updateGaugeMetric(k, v); err != nil {
+func (c *HTTPClient) UpdateMetrics(metrics []metric.Metric) error {
+	for _, mm := range metrics {
+		if err := c.updateMetric(&mm); err != nil {
 			return err
 		}
 	}
@@ -41,38 +37,13 @@ func (c *HTTPClient) UpdateMetrics(stats *metric.Stats) error {
 	return nil
 }
 
-func (c *HTTPClient) updateGaugeMetric(name string, value float64) error {
-	url := c.makeUpdateURL(
-		metric.GaugeType.ToString(),
-		name,
-		fmt.Sprintf("%f", value),
-	)
-
-	return c.updateMetric(url)
-}
-
-func (c *HTTPClient) updateCounterMetric(name string, value int) error {
-	url := c.makeUpdateURL(
-		metric.CounterType.ToString(),
-		name,
-		fmt.Sprintf("%d", value),
-	)
-
-	return c.updateMetric(url)
-}
-
-func (c *HTTPClient) makeUpdateURL(args ...string) string {
-	url := c.baseURL + updateAction
-
-	for _, arg := range args {
-		url += arg + "/"
+func (c *HTTPClient) updateMetric(mm *metric.Metric) error {
+	body, err := json.Marshal(mm)
+	if err != nil {
+		return err
 	}
 
-	return url
-}
-
-func (c *HTTPClient) updateMetric(url string) error {
-	req, err := c.makeRequest(url)
+	req, err := c.newUpdateReq(updateAction, body)
 	if err != nil {
 		return err
 	}
@@ -87,7 +58,7 @@ func (c *HTTPClient) updateMetric(url string) error {
 
 		defer func() { _ = resp.Body.Close() }()
 
-		errorMsg := "not update metric " + url + ", err: "
+		errorMsg := "not update metricservice " + mm.ID + ", err: "
 
 		if err != nil {
 			errorMsg += err.Error()
@@ -101,13 +72,26 @@ func (c *HTTPClient) updateMetric(url string) error {
 	return nil
 }
 
-func (c *HTTPClient) makeRequest(url string) (*http.Request, error) {
-	req, err := http.NewRequest(http.MethodPost, url, nil)
+func (c *HTTPClient) newUpdateReq(url string, body []byte) (*http.Request, error) {
+	var buf bytes.Buffer
+
+	gz := gzip.NewWriter(&buf)
+	if _, err := gz.Write(body); err != nil {
+		return nil, err
+	}
+
+	if err := gz.Close(); err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, c.baseURL+url, &buf)
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Add("Content-Type", "text/plain")
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Accept-Encoding", "gzip")
+	req.Header.Add("Content-Encoding", "gzip")
 
 	return req, nil
 }

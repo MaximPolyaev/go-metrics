@@ -1,20 +1,18 @@
 package handler_test
 
 import (
-	"errors"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/MaximPolyaev/go-metrics/internal/handler"
-	"github.com/MaximPolyaev/go-metrics/internal/metric"
+	"github.com/MaximPolyaev/go-metrics/internal/logger"
 	"github.com/MaximPolyaev/go-metrics/internal/router"
 	"github.com/stretchr/testify/assert"
 )
 
-type mockMetricService struct{}
-
-func TestUpdateFunc(t *testing.T) {
+func TestHandler_UpdateFunc(t *testing.T) {
 	tests := []struct {
 		name         string
 		URL          string
@@ -63,7 +61,8 @@ func TestUpdateFunc(t *testing.T) {
 	}
 
 	h := handler.New(&mockMetricService{})
-	muxRouter := router.CreateRouter(h)
+	lg := logger.New(os.Stdout)
+	muxRouter := router.CreateRouter(h, lg)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -77,22 +76,23 @@ func TestUpdateFunc(t *testing.T) {
 	}
 }
 
-func TestMainFunc(t *testing.T) {
+func TestHandler_MainFunc(t *testing.T) {
 	r := httptest.NewRequest(http.MethodGet, "/", nil)
 	w := httptest.NewRecorder()
 
 	h := handler.New(&mockMetricService{})
-	muxRouter := router.CreateRouter(h)
+	lg := logger.New(os.Stdout)
+	muxRouter := router.CreateRouter(h, lg)
 	muxRouter.ServeHTTP(w, r)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	str := w.Body.String()
 
-	assert.Contains(t, str, "<ul><li>test: 1.1</li><li>test: 10</li></ul>")
+	assert.Contains(t, str, "<ul><li>test: 10</li><li>test: 1.1</li></ul>")
 }
 
-func TestGetValue(t *testing.T) {
+func TestHandler_GetValue(t *testing.T) {
 	tests := []struct {
 		name            string
 		URL             string
@@ -156,7 +156,8 @@ func TestGetValue(t *testing.T) {
 	}
 
 	h := handler.New(&mockMetricService{})
-	muxRouter := router.CreateRouter(h)
+	lg := logger.New(os.Stdout)
+	muxRouter := router.CreateRouter(h, lg)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -172,41 +173,4 @@ func TestGetValue(t *testing.T) {
 			}
 		})
 	}
-}
-
-func (m *mockMetricService) Update(_ metric.Type, _ string, _ string) error {
-	return nil
-}
-
-func (m *mockMetricService) GetValues(mType metric.Type) (map[string]string, error) {
-	switch mType {
-	case metric.CounterType:
-		return map[string]string{
-			"test": "10",
-		}, nil
-	case metric.GaugeType:
-		return map[string]string{
-			"test": "1.1",
-		}, nil
-	}
-	return nil, nil
-}
-
-func (m *mockMetricService) GetValue(mType metric.Type, name string) (value string, ok bool, err error) {
-	if name == "notExist" {
-		return "", false, errors.New("")
-	}
-
-	switch mType {
-	case metric.CounterType:
-		if name == "test" {
-			return "10", true, nil
-		}
-	case metric.GaugeType:
-		if name == "test" {
-			return "1.1", true, nil
-		}
-	}
-
-	return "", false, nil
 }

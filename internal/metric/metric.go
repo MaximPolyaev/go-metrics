@@ -1,71 +1,95 @@
 package metric
 
 import (
-	"math/rand"
-	"runtime"
+	"errors"
+	"fmt"
+	"strconv"
 )
 
 type Type string
+
+type Metric struct {
+	ID    string   `json:"id"`
+	MType Type     `json:"type"`
+	Delta *int64   `json:"delta,omitempty"`
+	Value *float64 `json:"value,omitempty"`
+}
 
 const (
 	GaugeType   = Type("gauge")
 	CounterType = Type("counter")
 )
 
-type GaugeMap map[string]float64
-type CounterMap map[string]int
-
-type Stats struct {
-	runtime.MemStats
-	PollCount   int
-	RandomValue int
+func Types() [2]Type {
+	return [2]Type{GaugeType, CounterType}
 }
 
 func (t Type) ToString() string {
 	return string(t)
 }
 
-func ReadStats(stats *Stats) {
-	runtime.ReadMemStats(&stats.MemStats)
+func (t Type) Validate() error {
+	switch t {
+	case GaugeType:
+		return nil
+	case CounterType:
+		return nil
+	}
 
-	stats.PollCount += 1
-	stats.RandomValue = rand.Int()
+	return errors.New("invalid metric type: " + t.ToString())
 }
 
-func (s *Stats) GetGaugeMap() GaugeMap {
-	return GaugeMap{
-		"Alloc":         float64(s.Alloc),
-		"BuckHashSys":   float64(s.BuckHashSys),
-		"GCCPUFraction": s.GCCPUFraction,
-		"GCSys":         float64(s.GCSys),
-		"HeapAlloc":     float64(s.HeapAlloc),
-		"HeapIdle":      float64(s.HeapIdle),
-		"HeapInuse":     float64(s.HeapInuse),
-		"HeapObjects":   float64(s.HeapObjects),
-		"HeapReleased":  float64(s.HeapReleased),
-		"HeapSys":       float64(s.HeapSys),
-		"LastGC":        float64(s.LastGC),
-		"Lookups":       float64(s.Lookups),
-		"MCacheInuse":   float64(s.MCacheInuse),
-		"MCacheSys":     float64(s.MCacheSys),
-		"MSpanInuse":    float64(s.MSpanInuse),
-		"MSpanSys":      float64(s.MSpanSys),
-		"Mallocs":       float64(s.Mallocs),
-		"NextGC":        float64(s.NextGC),
-		"NumForcedGC":   float64(s.NumForcedGC),
-		"NumGC":         float64(s.NumGC),
-		"OtherSys":      float64(s.OtherSys),
-		"PauseTotalNs":  float64(s.PauseTotalNs),
-		"StackInuse":    float64(s.StackInuse),
-		"StackSys":      float64(s.StackSys),
-		"Sys":           float64(s.Sys),
-		"TotalAlloc":    float64(s.TotalAlloc),
-		"RandomValue":   float64(s.RandomValue),
+func (m *Metric) ValueInit() {
+	switch m.MType {
+	case CounterType:
+		m.Delta = new(int64)
+	case GaugeType:
+		m.Value = new(float64)
 	}
 }
 
-func (s *Stats) GetCounterMap() CounterMap {
-	return CounterMap{
-		"PoolCount": s.PollCount,
+func (m *Metric) Validate() error {
+	if len(m.ID) == 0 {
+		return errors.New("metricservice ID must be not empty")
 	}
+
+	if err := m.MType.Validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *Metric) ValidateWithValue() error {
+	if err := m.Validate(); err != nil {
+		return err
+	}
+
+	switch m.MType {
+	case CounterType:
+		if m.Delta == nil {
+			return fmt.Errorf("empty value for metricservice %s type", m.MType.ToString())
+		}
+	case GaugeType:
+		if m.Value == nil {
+			return fmt.Errorf("empty value for metricservice %s type", m.MType.ToString())
+		}
+	}
+
+	return nil
+}
+
+func (m *Metric) GetValueAsStr() string {
+	switch m.MType {
+	case CounterType:
+		if m.Delta != nil {
+			return strconv.Itoa(int(*m.Delta))
+		}
+	case GaugeType:
+		if m.Value != nil {
+			return fmt.Sprintf("%g", *m.Value)
+		}
+	}
+
+	return ""
 }

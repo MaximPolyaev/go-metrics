@@ -1,0 +1,93 @@
+package metric
+
+import (
+	"math/rand"
+	"runtime"
+)
+
+type (
+	Stats struct {
+		runtime.MemStats
+		PollCount   int64
+		RandomValue int
+	}
+
+	GaugeMap   map[string]float64
+	CounterMap map[string]int64
+)
+
+func ReadStats(stats *Stats) {
+	runtime.ReadMemStats(&stats.MemStats)
+
+	stats.PollCount += 1
+	stats.RandomValue = rand.Int()
+}
+
+func (s *Stats) AsMetrics() []Metric {
+	metrics := make([]Metric, 0, 30)
+
+	for k, v := range s.getGaugeMap() {
+		mm := Metric{
+			ID:    k,
+			MType: GaugeType,
+			Value: new(float64),
+		}
+
+		*mm.Value = v
+
+		metrics = append(metrics, mm)
+	}
+
+	for k, v := range s.getCounterMap() {
+		mm := Metric{
+			ID:    k,
+			MType: CounterType,
+			Delta: new(int64),
+		}
+
+		*mm.Delta = v
+
+		metrics = append(metrics, mm)
+	}
+
+	return metrics
+}
+
+func (s *Stats) getGaugeMap() GaugeMap {
+	return GaugeMap{
+		"Alloc":         float64(s.Alloc),
+		"BuckHashSys":   float64(s.BuckHashSys),
+		"GCCPUFraction": s.GCCPUFraction,
+		"GCSys":         float64(s.GCSys),
+		"HeapAlloc":     float64(s.HeapAlloc),
+		"HeapIdle":      float64(s.HeapIdle),
+		"HeapInuse":     float64(s.HeapInuse),
+		"HeapObjects":   float64(s.HeapObjects),
+		"HeapReleased":  float64(s.HeapReleased),
+		"HeapSys":       float64(s.HeapSys),
+		"LastGC":        float64(s.LastGC),
+		"Lookups":       float64(s.Lookups),
+		"MCacheInuse":   float64(s.MCacheInuse),
+		"MCacheSys":     float64(s.MCacheSys),
+		"MSpanInuse":    float64(s.MSpanInuse),
+		"MSpanSys":      float64(s.MSpanSys),
+		"Mallocs":       float64(s.Mallocs),
+		"Frees":         float64(s.Frees),
+		"NextGC":        float64(s.NextGC),
+		"NumForcedGC":   float64(s.NumForcedGC),
+		"NumGC":         float64(s.NumGC),
+		"OtherSys":      float64(s.OtherSys),
+		"PauseTotalNs":  float64(s.PauseTotalNs),
+		"StackInuse":    float64(s.StackInuse),
+		"StackSys":      float64(s.StackSys),
+		"Sys":           float64(s.Sys),
+		"TotalAlloc":    float64(s.TotalAlloc),
+		"RandomValue":   float64(s.RandomValue),
+	}
+}
+
+func (s *Stats) getCounterMap() CounterMap {
+	return CounterMap{
+		"PollCount": s.PollCount,
+	}
+}
