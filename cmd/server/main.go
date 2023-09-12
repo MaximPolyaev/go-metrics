@@ -51,6 +51,10 @@ func run() error {
 	}
 
 	dbConn, err := db.InitDB(*dbConfig.Dsn)
+	if err != nil {
+		return err
+	}
+
 	defer func() {
 		if err := dbConn.Close(); err != nil {
 			lg.Error(err)
