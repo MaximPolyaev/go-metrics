@@ -17,13 +17,14 @@ func main() {
 
 func run() error {
 	cfg := config.NewReportConfig()
-	if err := cfg.Parse(); err != nil {
+
+	if err := config.ParseCfgs([]config.Config{cfg}); err != nil {
 		return err
 	}
 
 	var mStats metric.Stats
 
-	httpClient := httpclient.NewHTTPClient(*cfg.Addr)
+	httpClient := httpclient.NewHTTPClient(cfg.GetNormalizedAddress())
 
 	poolInterval := time.NewTicker(time.Duration(*cfg.PollInterval) * time.Second)
 	reportInterval := time.NewTicker(time.Duration(*cfg.ReportInterval) * time.Second)

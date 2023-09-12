@@ -25,12 +25,16 @@ func main() {
 
 func run() error {
 	cfg := config.NewAddressConfig()
-	if err := cfg.Parse(); err != nil {
-		return err
-	}
-
 	storeCfg := config.NewStoreConfig()
-	if err := storeCfg.Parse(); err != nil {
+	dbConfig := config.NewDBConfig()
+
+	err := config.ParseCfgs([]config.Config{
+		cfg,
+		storeCfg,
+		dbConfig,
+	})
+
+	if err != nil {
 		return err
 	}
 
@@ -42,11 +46,6 @@ func run() error {
 		lg,
 	)
 	if err != nil {
-		return err
-	}
-
-	dbConfig := config.NewDBConfig()
-	if err := dbConfig.Parse(); err != nil {
 		return err
 	}
 
@@ -66,7 +65,7 @@ func run() error {
 	shutdownHandler(metricService)
 
 	return http.ListenAndServe(
-		*cfg.Addr,
+		cfg.GetNormalizedAddress(),
 		router.CreateRouter(h, lg, dbConn),
 	)
 }

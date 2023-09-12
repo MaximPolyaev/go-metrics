@@ -7,6 +7,11 @@ import (
 	"github.com/caarlos0/env/v9"
 )
 
+type Config interface {
+	EnvParse() error
+	ConfigureFlags()
+}
+
 type AddressConfig struct {
 	Addr *string `env:"ADDRESS"`
 }
@@ -44,25 +49,48 @@ func NewDBConfig() *DBConfig {
 	return &DBConfig{}
 }
 
-func (cfg *AddressConfig) Parse() error {
-	if err := env.Parse(cfg); err != nil {
-		return err
+func ParseCfgs(cfgs []Config) error {
+	for _, cfg := range cfgs {
+		if err := cfg.EnvParse(); err != nil {
+			return err
+		}
+
+		cfg.ConfigureFlags()
 	}
 
-	if cfg.Addr == nil {
-		cfg.Addr = new(string)
-		flag.StringVar(cfg.Addr, "a", ":8080", "http server addr")
-		flag.Parse()
-	}
+	flag.Parse()
 
 	return nil
 }
 
-func (cfg *StoreConfig) Parse() error {
-	if err := env.Parse(cfg); err != nil {
-		return err
+func (cfg *AddressConfig) EnvParse() error {
+	return env.Parse(cfg)
+}
+
+func (cfg *AddressConfig) ConfigureFlags() {
+	if cfg.Addr == nil {
+		cfg.Addr = new(string)
+		flag.StringVar(cfg.Addr, "a", ":8080", "http server addr")
+	}
+}
+
+func (cfg *AddressConfig) GetNormalizedAddress() string {
+	if nil == cfg.Addr {
+		return ""
 	}
 
+	if utf8.RuneCountInString(*cfg.Addr) < 4 || (*cfg.Addr)[:4] != "http" {
+		return "http://" + *cfg.Addr
+	}
+
+	return *cfg.Addr
+}
+
+func (cfg *StoreConfig) EnvParse() error {
+	return env.Parse(cfg)
+}
+
+func (cfg *StoreConfig) ConfigureFlags() {
 	if cfg.StoreInterval == nil {
 		cfg.StoreInterval = new(uint)
 		flag.UintVar(cfg.StoreInterval, "i", 1, "store interval")
@@ -77,17 +105,13 @@ func (cfg *StoreConfig) Parse() error {
 		cfg.Restore = new(bool)
 		flag.BoolVar(cfg.Restore, "r", true, "restore")
 	}
-
-	flag.Parse()
-
-	return nil
 }
 
-func (cfg *ReportConfig) Parse() error {
-	if err := env.Parse(cfg); err != nil {
-		return err
-	}
+func (cfg *ReportConfig) EnvParse() error {
+	return env.Parse(cfg)
+}
 
+func (cfg *ReportConfig) ConfigureFlags() {
 	if cfg.Addr == nil {
 		cfg.Addr = new(string)
 		flag.StringVar(cfg.Addr, "a", "http://localhost:8080", "http server addr")
@@ -102,33 +126,17 @@ func (cfg *ReportConfig) Parse() error {
 		cfg.PollInterval = new(int)
 		flag.IntVar(cfg.PollInterval, "p", 2, "poll interval")
 	}
-
-	flag.Parse()
-
-	*cfg.Addr = normalizeAddr(*cfg.Addr)
-
-	return nil
 }
 
-func (cfg *DBConfig) Parse() error {
-	if err := env.Parse(cfg); err != nil {
-		return err
-	}
+func (cfg *DBConfig) EnvParse() error {
+	return env.Parse(cfg)
+}
 
+func (cfg *DBConfig) ConfigureFlags() {
 	if cfg.Dsn == nil {
 		cfg.Dsn = new(string)
 		flag.StringVar(cfg.Dsn, "d", "", "database dsn")
 
 		flag.Parse()
 	}
-
-	return nil
-}
-
-func normalizeAddr(addr string) string {
-	if utf8.RuneCountInString(addr) < 4 || addr[:4] != "http" {
-		return "http://" + addr
-	}
-
-	return addr
 }
