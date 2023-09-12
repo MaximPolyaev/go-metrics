@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"net/url"
 	"time"
 
 	"github.com/MaximPolyaev/go-metrics/internal/config"
@@ -25,12 +24,7 @@ func run() error {
 
 	var mStats metric.Stats
 
-	addr, err := url.Parse(*cfg.Addr)
-	if err != nil {
-		return err
-	}
-
-	httpClient := httpclient.NewHTTPClient(addr.String())
+	httpClient := httpclient.NewHTTPClient(cfg.GetNormalizedAddress())
 
 	poolInterval := time.NewTicker(time.Duration(*cfg.PollInterval) * time.Second)
 	reportInterval := time.NewTicker(time.Duration(*cfg.ReportInterval) * time.Second)

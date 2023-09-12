@@ -3,6 +3,7 @@ package config
 import (
 	"flag"
 	"github.com/caarlos0/env/v9"
+	"unicode/utf8"
 )
 
 type Config interface {
@@ -63,6 +64,18 @@ func ParseCfgs(cfgs []Config) error {
 
 func (cfg *AddressConfig) EnvParse() error {
 	return env.Parse(cfg)
+}
+
+func (cfg *AddressConfig) GetNormalizedAddress() string {
+	if nil == cfg.Addr {
+		return ""
+	}
+
+	if utf8.RuneCountInString(*cfg.Addr) < 4 || (*cfg.Addr)[:4] != "http" {
+		return "http://" + *cfg.Addr
+	}
+
+	return *cfg.Addr
 }
 
 func (cfg *AddressConfig) ConfigureFlags() {
