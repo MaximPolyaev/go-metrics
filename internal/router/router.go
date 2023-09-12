@@ -1,6 +1,7 @@
 package router
 
 import (
+	"database/sql"
 	"net/http"
 
 	"github.com/MaximPolyaev/go-metrics/internal/logger"
@@ -14,6 +15,7 @@ const (
 	valuePattern        = "/value"
 	updateMetricPattern = updatePattern + "/{type}/{name}/{value}"
 	getMetricPattern    = valuePattern + "/{type}/{name}"
+	pingPattern         = "/ping"
 )
 
 type handler interface {
@@ -22,9 +24,14 @@ type handler interface {
 	MainFunc() http.HandlerFunc
 	UpdateByJSONFunc() http.HandlerFunc
 	GetValueByJSONFunc() http.HandlerFunc
+	PingFunc(db *sql.DB) http.HandlerFunc
 }
 
-func CreateRouter(h handler, log *logger.Logger) *chi.Mux {
+func CreateRouter(
+	h handler,
+	log *logger.Logger,
+	db *sql.DB,
+) *chi.Mux {
 	router := chi.NewRouter()
 
 	router.Use(middleware.GzipMiddleware)
@@ -35,6 +42,8 @@ func CreateRouter(h handler, log *logger.Logger) *chi.Mux {
 	router.Post(valuePattern, h.GetValueByJSONFunc())
 	router.Post(updateMetricPattern, h.UpdateFunc())
 	router.Get(getMetricPattern, h.GetValueFunc())
+
+	router.Get(pingPattern, h.PingFunc(db))
 
 	router.Get("/", h.MainFunc())
 

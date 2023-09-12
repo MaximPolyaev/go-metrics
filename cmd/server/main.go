@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/MaximPolyaev/go-metrics/internal/db"
 	"github.com/MaximPolyaev/go-metrics/internal/storage/filestorage"
 	"github.com/MaximPolyaev/go-metrics/internal/storage/memstorage"
 	"log"
@@ -44,13 +45,25 @@ func run() error {
 		return err
 	}
 
+	dbConfig := config.NewDbConfig()
+	if err := dbConfig.Parse(); err != nil {
+		return err
+	}
+
+	dbConn, err := db.InitDb(*dbConfig.Dsn)
+	defer func() {
+		if err := dbConn.Close(); err != nil {
+			lg.Error(err)
+		}
+	}()
+
 	h := handler.New(metricService)
 
 	shutdownHandler(metricService)
 
 	return http.ListenAndServe(
 		*cfg.Addr,
-		router.CreateRouter(h, lg),
+		router.CreateRouter(h, lg, dbConn),
 	)
 }
 

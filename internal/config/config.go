@@ -24,6 +24,10 @@ type StoreConfig struct {
 	Restore         *bool   `env:"RESTORE"`
 }
 
+type DbConfig struct {
+	Dsn *string `env:"DATABASE_DSN"`
+}
+
 func NewAddressConfig() *AddressConfig {
 	return &AddressConfig{}
 }
@@ -34,6 +38,10 @@ func NewStoreConfig() *StoreConfig {
 
 func NewReportConfig() *ReportConfig {
 	return &ReportConfig{}
+}
+
+func NewDbConfig() *DbConfig {
+	return &DbConfig{}
 }
 
 func (cfg *AddressConfig) Parse() error {
@@ -98,6 +106,21 @@ func (cfg *ReportConfig) Parse() error {
 	flag.Parse()
 
 	*cfg.Addr = normalizeAddr(*cfg.Addr)
+
+	return nil
+}
+
+func (cfg *DbConfig) Parse() error {
+	if err := env.Parse(cfg); err != nil {
+		return err
+	}
+
+	if cfg.Dsn == nil {
+		cfg.Dsn = new(string)
+		flag.StringVar(cfg.Dsn, "d", "", "database dsn")
+
+		flag.Parse()
+	}
 
 	return nil
 }

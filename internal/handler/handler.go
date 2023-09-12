@@ -1,9 +1,12 @@
 package handler
 
 import (
+	"context"
+	"database/sql"
 	"io"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/MaximPolyaev/go-metrics/internal/html"
 	"github.com/MaximPolyaev/go-metrics/internal/metric"
@@ -23,6 +26,20 @@ type metricService interface {
 func New(mService metricService) *Handler {
 	return &Handler{
 		metricService: mService,
+	}
+}
+
+func (h *Handler) PingFunc(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		if err := db.PingContext(ctx); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
