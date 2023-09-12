@@ -6,7 +6,6 @@ import (
 	"github.com/MaximPolyaev/go-metrics/internal/storage/memstorage"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
@@ -65,13 +64,8 @@ func run() error {
 
 	shutdownHandler(metricService)
 
-	addr, err := url.Parse(*cfg.Addr)
-	if err != nil {
-		return err
-	}
-
 	return http.ListenAndServe(
-		addr.Host,
+		*cfg.Addr,
 		router.CreateRouter(h, lg, dbConn),
 	)
 }

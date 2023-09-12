@@ -68,7 +68,7 @@ func (cfg *AddressConfig) EnvParse() error {
 func (cfg *AddressConfig) ConfigureFlags() {
 	if cfg.Addr == nil {
 		cfg.Addr = new(string)
-		flag.StringVar(cfg.Addr, "a", "http://localhost:8080", "http server addr")
+		flag.StringVar(cfg.Addr, "a", ":8080", "http server addr")
 	}
 }
 
