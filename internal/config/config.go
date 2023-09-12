@@ -2,8 +2,6 @@ package config
 
 import (
 	"flag"
-	"unicode/utf8"
-
 	"github.com/caarlos0/env/v9"
 )
 
@@ -72,18 +70,6 @@ func (cfg *AddressConfig) ConfigureFlags() {
 		cfg.Addr = new(string)
 		flag.StringVar(cfg.Addr, "a", "http://localhost:8080", "http server addr")
 	}
-}
-
-func (cfg *AddressConfig) GetNormalizedAddress() string {
-	if nil == cfg.Addr {
-		return ""
-	}
-
-	if utf8.RuneCountInString(*cfg.Addr) < 4 || (*cfg.Addr)[:4] != "http" {
-		return "http://" + *cfg.Addr
-	}
-
-	return *cfg.Addr
 }
 
 func (cfg *StoreConfig) EnvParse() error {
