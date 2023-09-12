@@ -45,12 +45,12 @@ func run() error {
 		return err
 	}
 
-	dbConfig := config.NewDbConfig()
+	dbConfig := config.NewDBConfig()
 	if err := dbConfig.Parse(); err != nil {
 		return err
 	}
 
-	dbConn, err := db.InitDb(*dbConfig.Dsn)
+	dbConn, err := db.InitDB(*dbConfig.Dsn)
 	defer func() {
 		if err := dbConn.Close(); err != nil {
 			lg.Error(err)
