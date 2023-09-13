@@ -119,6 +119,12 @@ func (s *Storage) GetAllByType(mType metric.Type) (values map[string]metric.Metr
 
 	query := `SELECT id, delta, value FROM metrics WHERE type = $1`
 	rows, err := s.db.QueryContext(ctx, query, mType.ToString())
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			s.log.Error(err)
+		}
+	}()
 
 	if err != nil {
 		s.log.Error(err)
@@ -126,7 +132,7 @@ func (s *Storage) GetAllByType(mType metric.Type) (values map[string]metric.Metr
 		return
 	}
 
-	values = make(map[string]metric.Metric)
+	tmpValues := make(map[string]metric.Metric)
 
 	for rows.Next() {
 		var mDelta sql.NullInt64
@@ -156,8 +162,16 @@ func (s *Storage) GetAllByType(mType metric.Type) (values map[string]metric.Metr
 			*val.Value = mValue.Float64
 		}
 
-		values[id] = val
+		tmpValues[id] = val
 	}
+
+	if err := rows.Err(); err != nil {
+		s.log.Error(err)
+
+		return
+	}
+
+	values = tmpValues
 
 	return values, true
 }
