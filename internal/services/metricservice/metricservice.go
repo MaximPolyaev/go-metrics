@@ -9,13 +9,13 @@ import (
 )
 
 type MetricService struct {
-	memStorage  memStorage
+	mStorage    metricStorage
 	fileStorage fileStorage
 	storeCfg    *config.StoreConfig
 	log         *logger.Logger
 }
 
-type memStorage interface {
+type metricStorage interface {
 	Set(mType metric.Type, val metric.Metric)
 	Get(mType metric.Type, id string) (val metric.Metric, ok bool)
 	GetAllByType(mType metric.Type) (values map[string]metric.Metric, ok bool)
@@ -27,13 +27,13 @@ type fileStorage interface {
 }
 
 func New(
-	memStorage memStorage,
+	memStorage metricStorage,
 	fileStorage fileStorage,
 	storeCfg *config.StoreConfig,
 	log *logger.Logger,
 ) (*MetricService, error) {
 	ms := &MetricService{
-		memStorage:  memStorage,
+		mStorage:    memStorage,
 		fileStorage: fileStorage,
 		storeCfg:    storeCfg,
 		log:         log,
@@ -55,15 +55,15 @@ func New(
 func (s *MetricService) Update(mm *metric.Metric) *metric.Metric {
 	switch mm.MType {
 	case metric.GaugeType:
-		s.memStorage.Set(mm.MType, *mm)
+		s.mStorage.Set(mm.MType, *mm)
 	case metric.CounterType:
-		existDelta, ok := s.memStorage.Get(mm.MType, mm.ID)
+		existDelta, ok := s.mStorage.Get(mm.MType, mm.ID)
 
 		if ok {
 			*mm.Delta += *existDelta.Delta
 		}
 
-		s.memStorage.Set(mm.MType, *mm)
+		s.mStorage.Set(mm.MType, *mm)
 	}
 
 	if s.storeCfg != nil && *s.storeCfg.StoreInterval == 0 {
@@ -74,7 +74,7 @@ func (s *MetricService) Update(mm *metric.Metric) *metric.Metric {
 }
 
 func (s *MetricService) Get(mm *metric.Metric) (*metric.Metric, bool) {
-	existMm, ok := s.memStorage.Get(mm.MType, mm.ID)
+	existMm, ok := s.mStorage.Get(mm.MType, mm.ID)
 
 	if !ok {
 		return mm, false
@@ -87,7 +87,7 @@ func (s *MetricService) GetAll() []metric.Metric {
 	var mSlice []metric.Metric
 
 	for _, mType := range metric.Types() {
-		metricMap, ok := s.memStorage.GetAllByType(mType)
+		metricMap, ok := s.mStorage.GetAllByType(mType)
 		if ok {
 			for _, m := range metricMap {
 				mSlice = append(mSlice, m)
