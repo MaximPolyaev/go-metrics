@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -31,17 +32,25 @@ func run() error {
 	storeCfg := config.NewStoreConfig()
 	dbConfig := config.NewDBConfig()
 
-	err := config.ParseCfgs([]config.Config{
+	configs := []config.Config{
 		cfg,
 		storeCfg,
 		dbConfig,
-	})
+	}
+	err := config.ParseCfgs(configs)
 
 	if err != nil {
 		return err
 	}
 
 	lg := logger.New(os.Stdout)
+
+	marshal, err := json.Marshal(configs)
+	if err != nil {
+		return err
+	}
+
+	lg.Info("configs ", string(marshal))
 
 	var dbConn *sql.DB
 
