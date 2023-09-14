@@ -79,12 +79,12 @@ func (cfg *AddressConfig) GetNormalizedAddress() string {
 }
 
 func (cfg *AddressConfig) ConfigureFlags() {
+	addr := new(string)
 	if cfg.Addr == nil {
-		cfg.Addr = new(string)
-		*cfg.Addr = ":8080"
+		cfg.Addr = addr
 	}
 
-	flag.StringVar(cfg.Addr, "a", *cfg.Addr, "http server addr")
+	flag.StringVar(addr, "a", ":8080", "http server addr")
 }
 
 func (cfg *StoreConfig) EnvParse() error {
@@ -92,24 +92,25 @@ func (cfg *StoreConfig) EnvParse() error {
 }
 
 func (cfg *StoreConfig) ConfigureFlags() {
+	storeInterval := new(uint)
+	fileStoragePath := new(string)
+	restore := new(bool)
+
 	if cfg.StoreInterval == nil {
-		cfg.StoreInterval = new(uint)
-		*cfg.StoreInterval = 1
+		cfg.StoreInterval = storeInterval
 	}
 
 	if cfg.FileStoragePath == nil {
-		cfg.FileStoragePath = new(string)
-		*cfg.FileStoragePath = "/tmp/metrics-db.json"
+		cfg.FileStoragePath = fileStoragePath
 	}
 
 	if cfg.Restore == nil {
-		cfg.Restore = new(bool)
-		*cfg.Restore = true
+		cfg.Restore = restore
 	}
 
-	flag.UintVar(cfg.StoreInterval, "i", *cfg.StoreInterval, "store interval")
-	flag.StringVar(cfg.FileStoragePath, "f", *cfg.FileStoragePath, "file storage path")
-	flag.BoolVar(cfg.Restore, "r", *cfg.Restore, "restore")
+	flag.UintVar(storeInterval, "i", 1, "store interval")
+	flag.StringVar(fileStoragePath, "f", "/tmp/metrics-db.json", "file storage path")
+	flag.BoolVar(restore, "r", true, "restore")
 }
 
 func (cfg *ReportConfig) EnvParse() error {
@@ -117,24 +118,25 @@ func (cfg *ReportConfig) EnvParse() error {
 }
 
 func (cfg *ReportConfig) ConfigureFlags() {
+	addr := new(string)
+	reportInterval := new(int)
+	pollInterval := new(int)
+
 	if cfg.Addr == nil {
-		cfg.Addr = new(string)
-		*cfg.Addr = "http://localhost:8080"
+		cfg.Addr = addr
 	}
 
 	if cfg.ReportInterval == nil {
-		cfg.ReportInterval = new(int)
-		*cfg.ReportInterval = 10
+		cfg.ReportInterval = reportInterval
 	}
 
 	if cfg.PollInterval == nil {
-		cfg.PollInterval = new(int)
-		*cfg.PollInterval = 2
+		cfg.PollInterval = pollInterval
 	}
 
-	flag.StringVar(cfg.Addr, "a", *cfg.Addr, "http server addr")
-	flag.IntVar(cfg.ReportInterval, "r", *cfg.ReportInterval, "report interval")
-	flag.IntVar(cfg.PollInterval, "p", *cfg.PollInterval, "poll interval")
+	flag.StringVar(addr, "a", "http://localhost:8080", "http server addr")
+	flag.IntVar(reportInterval, "r", 10, "report interval")
+	flag.IntVar(pollInterval, "p", 2, "poll interval")
 }
 
 func (cfg *DBConfig) EnvParse() error {
@@ -142,9 +144,11 @@ func (cfg *DBConfig) EnvParse() error {
 }
 
 func (cfg *DBConfig) ConfigureFlags() {
+	dsn := new(string)
+
 	if cfg.Dsn == nil {
-		cfg.Dsn = new(string)
+		cfg.Dsn = dsn
 	}
 
-	flag.StringVar(cfg.Dsn, "d", *cfg.Dsn, "database dsn")
+	flag.StringVar(dsn, "d", "", "database dsn")
 }
