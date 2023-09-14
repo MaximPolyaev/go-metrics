@@ -1,6 +1,7 @@
 package memstorage
 
 import (
+	"context"
 	"testing"
 
 	"github.com/MaximPolyaev/go-metrics/internal/metric"
@@ -18,7 +19,7 @@ func Test_memStorage_Get(t *testing.T) {
 		Delta: &delta,
 	}
 
-	s.Set(metric.CounterType, wantVal)
+	s.Set(context.TODO(), metric.CounterType, wantVal)
 
 	type args struct {
 		mType metric.Type
@@ -53,7 +54,7 @@ func Test_memStorage_Get(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotVal, gotOk := s.Get(tt.args.mType, tt.args.id)
+			gotVal, gotOk := s.Get(context.TODO(), tt.args.mType, tt.args.id)
 			assert.Equal(t, tt.wantVal, gotVal)
 			assert.Equal(t, tt.wantOk, gotOk)
 		})
@@ -71,7 +72,7 @@ func Test_memStorage_GetValuesByNamespace(t *testing.T) {
 		Delta: &delta,
 	}
 
-	s.Set(metric.CounterType, wantVal)
+	s.Set(context.TODO(), metric.CounterType, wantVal)
 
 	tests := []struct {
 		name       string
@@ -97,7 +98,7 @@ func Test_memStorage_GetValuesByNamespace(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotValues, gotOk := s.GetAllByType(tt.mType)
+			gotValues, gotOk := s.GetAllByType(context.TODO(), tt.mType)
 			assert.Equal(t, tt.wantValues, gotValues)
 			assert.Equal(t, tt.wantOk, gotOk)
 		})

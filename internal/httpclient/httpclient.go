@@ -16,9 +16,7 @@ type HTTPClient struct {
 	baseURL string
 }
 
-const (
-	updateAction = "/update/"
-)
+const updatesAction = "/updates/"
 
 func NewHTTPClient(baseURL string) *HTTPClient {
 	return &HTTPClient{
@@ -27,23 +25,13 @@ func NewHTTPClient(baseURL string) *HTTPClient {
 	}
 }
 
-func (c *HTTPClient) UpdateMetrics(metrics []metric.Metric) error {
-	for _, mm := range metrics {
-		if err := c.updateMetric(&mm); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (c *HTTPClient) updateMetric(mm *metric.Metric) error {
-	body, err := json.Marshal(mm)
+func (c *HTTPClient) UpdateMetrics(mSlice []metric.Metric) error {
+	body, err := json.Marshal(mSlice)
 	if err != nil {
 		return err
 	}
 
-	req, err := c.newUpdateReq(updateAction, body)
+	req, err := c.newUpdateReq(updatesAction, body)
 	if err != nil {
 		return err
 	}
@@ -58,7 +46,7 @@ func (c *HTTPClient) updateMetric(mm *metric.Metric) error {
 
 		defer func() { _ = resp.Body.Close() }()
 
-		errorMsg := "not update metricservice " + mm.ID + ", err: "
+		errorMsg := "not update metrics, err: "
 
 		if err != nil {
 			errorMsg += err.Error()

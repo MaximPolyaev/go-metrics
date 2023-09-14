@@ -38,8 +38,8 @@ CREATE TABLE IF NOT EXISTS metrics (
 	return err
 }
 
-func (s *Storage) Set(mType metric.Type, val metric.Metric) {
-	ctx, cancel := context.WithTimeout(context.Background(), timeoutReqs)
+func (s *Storage) Set(ctx context.Context, mType metric.Type, val metric.Metric) {
+	ctx, cancel := context.WithTimeout(ctx, timeoutReqs)
 	defer cancel()
 
 	query := `
@@ -48,8 +48,8 @@ VALUES ($1, $2, $3, $4)
 ON CONFLICT (id, type)
 DO UPDATE SET delta = $3, value = $4;	
 `
-	mDelta := sql.NullInt64{}
-	mValue := sql.NullFloat64{}
+	var mDelta sql.NullInt64
+	var mValue sql.NullFloat64
 
 	if val.Delta != nil {
 		mDelta.Valid = true
@@ -75,8 +75,57 @@ DO UPDATE SET delta = $3, value = $4;
 	}
 }
 
-func (s *Storage) Get(mType metric.Type, id string) (val metric.Metric, ok bool) {
-	ctx, cancel := context.WithTimeout(context.Background(), timeoutReqs)
+func (s *Storage) BatchSet(ctx context.Context, mSlice []metric.Metric) {
+	ctx, cancel := context.WithTimeout(ctx, timeoutReqs)
+	defer cancel()
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		s.log.Error(err)
+		return
+	}
+
+	query := `
+INSERT INTO metrics (id, type, delta, value)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (id, type)
+DO UPDATE SET delta = $3, value = $4;	
+`
+
+	stmt, err := tx.PrepareContext(ctx, query)
+	if err != nil {
+		s.log.Error(err)
+		return
+	}
+
+	for _, m := range mSlice {
+		var mDelta sql.NullInt64
+		var mValue sql.NullFloat64
+
+		if m.Delta != nil {
+			mDelta.Valid = true
+			mDelta.Int64 = *m.Delta
+		}
+
+		if m.Value != nil {
+			mValue.Valid = true
+			mValue.Float64 = *m.Value
+		}
+
+		if _, err := stmt.ExecContext(ctx, m.ID, m.MType.ToString(), mDelta, mValue); err != nil {
+			s.log.Error(err)
+			return
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		s.log.Error(err)
+		return
+	}
+}
+
+func (s *Storage) Get(ctx context.Context, mType metric.Type, id string) (val metric.Metric, ok bool) {
+	ctx, cancel := context.WithTimeout(ctx, timeoutReqs)
 	defer cancel()
 
 	var mDelta sql.NullInt64
@@ -113,8 +162,8 @@ func (s *Storage) Get(mType metric.Type, id string) (val metric.Metric, ok bool)
 	return val, true
 }
 
-func (s *Storage) GetAllByType(mType metric.Type) (values map[string]metric.Metric, ok bool) {
-	ctx, cancel := context.WithTimeout(context.Background(), timeoutReqs)
+func (s *Storage) GetAllByType(ctx context.Context, mType metric.Type) (values map[string]metric.Metric, ok bool) {
+	ctx, cancel := context.WithTimeout(ctx, timeoutReqs)
 	defer cancel()
 
 	query := `SELECT id, delta, value FROM metrics WHERE type = $1`

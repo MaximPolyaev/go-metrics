@@ -12,6 +12,7 @@ import (
 
 const (
 	updatePattern       = "/update"
+	updatesPattern      = "/updates"
 	valuePattern        = "/value"
 	updateMetricPattern = updatePattern + "/{type}/{name}/{value}"
 	getMetricPattern    = valuePattern + "/{type}/{name}"
@@ -23,6 +24,7 @@ type handler interface {
 	GetValueFunc() http.HandlerFunc
 	MainFunc() http.HandlerFunc
 	UpdateByJSONFunc() http.HandlerFunc
+	BatchUpdateByJsonFunc() http.HandlerFunc
 	GetValueByJSONFunc() http.HandlerFunc
 	PingFunc(db *sql.DB) http.HandlerFunc
 }
@@ -39,6 +41,7 @@ func CreateRouter(
 	router.Use(chimiddleware.StripSlashes)
 
 	router.Post(updatePattern, h.UpdateByJSONFunc())
+	router.Post(updatesPattern, h.BatchUpdateByJsonFunc())
 	router.Post(valuePattern, h.GetValueByJSONFunc())
 	router.Post(updateMetricPattern, h.UpdateFunc())
 	router.Get(getMetricPattern, h.GetValueFunc())

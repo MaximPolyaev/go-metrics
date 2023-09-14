@@ -18,9 +18,10 @@ type Handler struct {
 }
 
 type metricService interface {
-	Update(mm *metric.Metric) *metric.Metric
-	Get(mm *metric.Metric) (*metric.Metric, bool)
-	GetAll() []metric.Metric
+	Update(ctx context.Context, mm *metric.Metric) *metric.Metric
+	Get(ctx context.Context, mm *metric.Metric) (*metric.Metric, bool)
+	GetAll(ctx context.Context) []metric.Metric
+	BatchUpdate(ctx context.Context, mSlice []metric.Metric) ([]metric.Metric, error)
 }
 
 func New(mService metricService) *Handler {
@@ -46,7 +47,7 @@ func (h *Handler) PingFunc(db *sql.DB) http.HandlerFunc {
 func (h *Handler) MainFunc() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var list string
-		for _, m := range h.metricService.GetAll() {
+		for _, m := range h.metricService.GetAll(r.Context()) {
 			list += html.Li(m.ID + ": " + m.GetValueAsStr())
 		}
 
@@ -93,7 +94,7 @@ func (h *Handler) UpdateFunc() http.HandlerFunc {
 			return
 		}
 
-		h.metricService.Update(&mm)
+		h.metricService.Update(r.Context(), &mm)
 	}
 }
 
@@ -108,7 +109,7 @@ func (h *Handler) GetValueFunc() http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
 
-		metricValue, ok := h.metricService.Get(&m)
+		metricValue, ok := h.metricService.Get(r.Context(), &m)
 		if !ok {
 			http.Error(w, "metric not found", http.StatusNotFound)
 			return

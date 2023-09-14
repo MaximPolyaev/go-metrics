@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"net/http"
@@ -82,7 +83,7 @@ func shutdownHandler(s *metricservice.MetricService) {
 	go func() {
 		<-sigs
 
-		s.Sync()
+		s.Sync(context.Background())
 
 		os.Exit(0)
 	}()

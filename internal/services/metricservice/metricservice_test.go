@@ -1,6 +1,7 @@
 package metricservice
 
 import (
+	"context"
 	"testing"
 
 	"github.com/MaximPolyaev/go-metrics/internal/metric"
@@ -105,7 +106,7 @@ func TestMetricService_Update(t *testing.T) {
 				mm.Delta = &tt.args.delta
 			}
 
-			mm = *s.Update(&mm)
+			mm = *s.Update(context.TODO(), &mm)
 
 			switch mm.MType {
 			case metric.GaugeType:
@@ -119,9 +120,9 @@ func TestMetricService_Update(t *testing.T) {
 	}
 }
 
-func (s mockMemStorage) Set(_ metric.Type, _ metric.Metric) {}
-func (s mockMemStorage) Get(mType metric.Type, id string) (val metric.Metric, ok bool) {
-	metricMap, ok := s.GetAllByType(mType)
+func (s mockMemStorage) Set(_ context.Context, _ metric.Type, _ metric.Metric) {}
+func (s mockMemStorage) Get(ctx context.Context, mType metric.Type, id string) (val metric.Metric, ok bool) {
+	metricMap, ok := s.GetAllByType(ctx, mType)
 	if !ok {
 		return
 	}
@@ -131,7 +132,7 @@ func (s mockMemStorage) Get(mType metric.Type, id string) (val metric.Metric, ok
 	return
 }
 
-func (s mockMemStorage) GetAllByType(mType metric.Type) (values map[string]metric.Metric, ok bool) {
+func (s mockMemStorage) GetAllByType(_ context.Context, mType metric.Type) (values map[string]metric.Metric, ok bool) {
 	var delta int64
 	var value float64
 
@@ -151,3 +152,5 @@ func (s mockMemStorage) GetAllByType(mType metric.Type) (values map[string]metri
 
 	return nil, false
 }
+
+func (s mockMemStorage) BatchSet(_ context.Context, _ []metric.Metric) {}
