@@ -26,6 +26,12 @@ func (h *Handler) BatchUpdateByJSONFunc() http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		defer func() {
+			err := r.Body.Close()
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+		}()
 
 		var mSlice []metric.Metric
 		if err := json.Unmarshal(buf, &mSlice); err != nil {
@@ -33,24 +39,11 @@ func (h *Handler) BatchUpdateByJSONFunc() http.HandlerFunc {
 			return
 		}
 
-		updSlice, err := h.metricService.BatchUpdate(r.Context(), mSlice)
+		err = h.metricService.BatchUpdate(r.Context(), mSlice)
 
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 			return
-		}
-
-		resp, err := json.Marshal(updSlice)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-
-		if _, err := w.Write(resp); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
 }
@@ -68,6 +61,14 @@ func (h *Handler) UpdateByJSONFunc() http.HandlerFunc {
 		}
 
 		buf, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		err = r.Body.Close()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

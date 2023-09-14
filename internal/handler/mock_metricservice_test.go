@@ -11,8 +11,8 @@ func (s *mockMetricService) Update(_ context.Context, _ *metric.Metric) *metric.
 	return nil
 }
 
-func (s *mockMetricService) BatchUpdate(_ context.Context, _ []metric.Metric) ([]metric.Metric, error) {
-	return nil, nil
+func (s *mockMetricService) BatchUpdate(_ context.Context, _ []metric.Metric) error {
+	return nil
 }
 
 func (s *mockMetricService) Get(ctx context.Context, mm *metric.Metric) (*metric.Metric, bool) {

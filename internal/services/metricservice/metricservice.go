@@ -75,9 +75,9 @@ func (s *MetricService) Update(ctx context.Context, mm *metric.Metric) *metric.M
 	return mm
 }
 
-func (s *MetricService) BatchUpdate(ctx context.Context, mSlice []metric.Metric) ([]metric.Metric, error) {
+func (s *MetricService) BatchUpdate(ctx context.Context, mSlice []metric.Metric) error {
 	if len(mSlice) == 0 {
-		return make([]metric.Metric, 0), nil
+		return nil
 	}
 
 	gaugeMap := make(map[string]metric.Metric)
@@ -85,7 +85,7 @@ func (s *MetricService) BatchUpdate(ctx context.Context, mSlice []metric.Metric)
 
 	for _, m := range mSlice {
 		if err := m.ValidateWithValue(); err != nil {
-			return make([]metric.Metric, 0), err
+			return err
 		}
 
 		tmpKey := m.ID + "#" + m.MType.ToString()
@@ -129,7 +129,7 @@ func (s *MetricService) BatchUpdate(ctx context.Context, mSlice []metric.Metric)
 
 	s.mStorage.BatchSet(ctx, updSlice)
 
-	return updSlice, nil
+	return nil
 }
 
 func (s *MetricService) Get(ctx context.Context, mm *metric.Metric) (*metric.Metric, bool) {

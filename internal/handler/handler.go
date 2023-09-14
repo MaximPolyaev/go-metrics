@@ -21,7 +21,7 @@ type metricService interface {
 	Update(ctx context.Context, mm *metric.Metric) *metric.Metric
 	Get(ctx context.Context, mm *metric.Metric) (*metric.Metric, bool)
 	GetAll(ctx context.Context) []metric.Metric
-	BatchUpdate(ctx context.Context, mSlice []metric.Metric) ([]metric.Metric, error)
+	BatchUpdate(ctx context.Context, mSlice []metric.Metric) error
 }
 
 func New(mService metricService) *Handler {
