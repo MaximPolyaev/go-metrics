@@ -8,6 +8,8 @@ import (
 
 	"github.com/MaximPolyaev/go-metrics/internal/logger"
 	"github.com/MaximPolyaev/go-metrics/internal/metric"
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 const timeoutReqs = 10 * time.Second
@@ -39,88 +41,54 @@ CREATE TABLE IF NOT EXISTS metrics (
 }
 
 func (s *Storage) Set(ctx context.Context, mType metric.Type, val metric.Metric) {
-	ctx, cancel := context.WithTimeout(ctx, timeoutReqs)
-	defer cancel()
+	var prevT *time.Duration
 
-	query := `
-INSERT INTO metrics (id, type, delta, value)
-VALUES ($1, $2, $3, $4)
-ON CONFLICT (id, type)
-DO UPDATE SET delta = $3, value = $4;	
-`
-	var mDelta sql.NullInt64
-	var mValue sql.NullFloat64
+	for {
+		if prevT != nil {
+			time.Sleep(*prevT)
+		}
 
-	if val.Delta != nil {
-		mDelta.Valid = true
-		mDelta.Int64 = *val.Delta
-	}
+		if err := s.attemptSet(ctx, mType, val); err != nil {
+			s.log.Error(err)
 
-	if val.Value != nil {
-		mValue.Valid = true
-		mValue.Float64 = *val.Value
-	}
+			if s.isRetryReq(err) {
+				prevT = s.getNextAttemptTime(prevT)
+			} else {
+				prevT = nil
+			}
 
-	_, err := s.db.ExecContext(
-		ctx,
-		query,
-		val.ID,
-		mType.ToString(),
-		mDelta,
-		mValue,
-	)
+			if prevT != nil {
+				continue
+			}
+		}
 
-	if err != nil {
-		s.log.Error(err)
+		break
 	}
 }
 
 func (s *Storage) BatchSet(ctx context.Context, mSlice []metric.Metric) {
-	ctx, cancel := context.WithTimeout(ctx, timeoutReqs)
-	defer cancel()
+	var prevT *time.Duration
 
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		s.log.Error(err)
-		return
-	}
-
-	query := `
-INSERT INTO metrics (id, type, delta, value)
-VALUES ($1, $2, $3, $4)
-ON CONFLICT (id, type)
-DO UPDATE SET delta = $3, value = $4;	
-`
-
-	stmt, err := tx.PrepareContext(ctx, query)
-	if err != nil {
-		s.log.Error(err)
-		return
-	}
-
-	for _, m := range mSlice {
-		var mDelta sql.NullInt64
-		var mValue sql.NullFloat64
-
-		if m.Delta != nil {
-			mDelta.Valid = true
-			mDelta.Int64 = *m.Delta
+	for {
+		if prevT != nil {
+			time.Sleep(*prevT)
 		}
 
-		if m.Value != nil {
-			mValue.Valid = true
-			mValue.Float64 = *m.Value
-		}
-
-		if _, err := stmt.ExecContext(ctx, m.ID, m.MType.ToString(), mDelta, mValue); err != nil {
+		if err := s.attemptBatchSet(ctx, mSlice); err != nil {
 			s.log.Error(err)
-			return
-		}
-	}
 
-	if err := tx.Commit(); err != nil {
-		s.log.Error(err)
-		return
+			prevT = nil
+
+			if errors.Is(err, context.DeadlineExceeded) {
+				prevT = s.getNextAttemptTime(prevT)
+			}
+
+			if prevT != nil {
+				continue
+			}
+		}
+
+		break
 	}
 }
 
@@ -223,4 +191,106 @@ func (s *Storage) GetAllByType(ctx context.Context, mType metric.Type) (values m
 	values = tmpValues
 
 	return values, true
+}
+
+func (s *Storage) attemptSet(ctx context.Context, mType metric.Type, val metric.Metric) error {
+	ctx, cancel := context.WithTimeout(ctx, timeoutReqs)
+	defer cancel()
+
+	query := `
+INSERT INTO metrics (id, type, delta, value)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (id, type)
+DO UPDATE SET delta = $3, value = $4;
+`
+	var mDelta sql.NullInt64
+	var mValue sql.NullFloat64
+
+	if val.Delta != nil {
+		mDelta.Valid = true
+		mDelta.Int64 = *val.Delta
+	}
+
+	if val.Value != nil {
+		mValue.Valid = true
+		mValue.Float64 = *val.Value
+	}
+
+	_, err := s.db.ExecContext(
+		ctx,
+		query,
+		val.ID,
+		mType.ToString(),
+		mDelta,
+		mValue,
+	)
+
+	return err
+}
+
+func (s *Storage) attemptBatchSet(ctx context.Context, mSlice []metric.Metric) error {
+	ctx, cancel := context.WithTimeout(ctx, timeoutReqs)
+	defer cancel()
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	query := `
+INSERT INTO metrics (id, type, delta, value)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (id, type)
+DO UPDATE SET delta = $3, value = $4;	
+`
+
+	stmt, err := tx.PrepareContext(ctx, query)
+	if err != nil {
+		return err
+	}
+
+	for _, m := range mSlice {
+		var mDelta sql.NullInt64
+		var mValue sql.NullFloat64
+
+		if m.Delta != nil {
+			mDelta.Valid = true
+			mDelta.Int64 = *m.Delta
+		}
+
+		if m.Value != nil {
+			mValue.Valid = true
+			mValue.Float64 = *m.Value
+		}
+
+		if _, err := stmt.ExecContext(ctx, m.ID, m.MType.ToString(), mDelta, mValue); err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
+func (s *Storage) getNextAttemptTime(prevT *time.Duration) *time.Duration {
+	if prevT == nil {
+		t := time.Second
+		return &t
+	}
+
+	switch *prevT {
+	case time.Second:
+		t := 3 * time.Second
+		return &t
+	case 3 * time.Second:
+		t := 5 * time.Second
+		return &t
+	default:
+		return nil
+	}
+}
+
+func (s *Storage) isRetryReq(err error) bool {
+	var pgErr *pgconn.PgError
+
+	return errors.As(err, &pgErr) && pgErr.Code == pgerrcode.ConnectionException
 }
