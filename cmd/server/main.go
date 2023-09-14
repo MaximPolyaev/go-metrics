@@ -70,6 +70,8 @@ func run() error {
 
 	h := handler.New(metricService)
 
+	lg.Info("Start server on ", *cfg.Addr)
+
 	return http.ListenAndServe(
 		*cfg.Addr,
 		router.CreateRouter(h, lg, dbConn),
