@@ -24,7 +24,7 @@ type handler interface {
 	GetValueFunc() http.HandlerFunc
 	MainFunc() http.HandlerFunc
 	UpdateByJSONFunc() http.HandlerFunc
-	BatchUpdateByJsonFunc() http.HandlerFunc
+	BatchUpdateByJSONFunc() http.HandlerFunc
 	GetValueByJSONFunc() http.HandlerFunc
 	PingFunc(db *sql.DB) http.HandlerFunc
 }
@@ -41,7 +41,7 @@ func CreateRouter(
 	router.Use(chimiddleware.StripSlashes)
 
 	router.Post(updatePattern, h.UpdateByJSONFunc())
-	router.Post(updatesPattern, h.BatchUpdateByJsonFunc())
+	router.Post(updatesPattern, h.BatchUpdateByJSONFunc())
 	router.Post(valuePattern, h.GetValueByJSONFunc())
 	router.Post(updateMetricPattern, h.UpdateFunc())
 	router.Get(getMetricPattern, h.GetValueFunc())
