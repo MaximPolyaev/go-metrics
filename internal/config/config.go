@@ -2,10 +2,14 @@ package config
 
 import (
 	"flag"
-	"unicode/utf8"
-
 	"github.com/caarlos0/env/v9"
+	"unicode/utf8"
 )
+
+type Config interface {
+	EnvParse() error
+	ConfigureFlags()
+}
 
 type AddressConfig struct {
 	Addr *string `env:"ADDRESS"`
@@ -24,6 +28,10 @@ type StoreConfig struct {
 	Restore         *bool   `env:"RESTORE"`
 }
 
+type DBConfig struct {
+	Dsn *string `env:"DATABASE_DSN"`
+}
+
 func NewAddressConfig() *AddressConfig {
 	return &AddressConfig{}
 }
@@ -36,76 +44,111 @@ func NewReportConfig() *ReportConfig {
 	return &ReportConfig{}
 }
 
-func (cfg *AddressConfig) Parse() error {
-	if err := env.Parse(cfg); err != nil {
-		return err
+func NewDBConfig() *DBConfig {
+	return &DBConfig{}
+}
+
+func ParseCfgs(cfgs []Config) error {
+	for _, cfg := range cfgs {
+		if err := cfg.EnvParse(); err != nil {
+			return err
+		}
+
+		cfg.ConfigureFlags()
 	}
 
-	if cfg.Addr == nil {
-		cfg.Addr = new(string)
-		flag.StringVar(cfg.Addr, "a", ":8080", "http server addr")
-		flag.Parse()
-	}
+	flag.Parse()
 
 	return nil
 }
 
-func (cfg *StoreConfig) Parse() error {
-	if err := env.Parse(cfg); err != nil {
-		return err
+func (cfg *AddressConfig) EnvParse() error {
+	return env.Parse(cfg)
+}
+
+func (cfg *AddressConfig) GetNormalizedAddress() string {
+	if nil == cfg.Addr {
+		return ""
 	}
 
+	if utf8.RuneCountInString(*cfg.Addr) < 4 || (*cfg.Addr)[:4] != "http" {
+		return "http://" + *cfg.Addr
+	}
+
+	return *cfg.Addr
+}
+
+func (cfg *AddressConfig) ConfigureFlags() {
+	addr := new(string)
+	if cfg.Addr == nil {
+		cfg.Addr = addr
+	}
+
+	flag.StringVar(addr, "a", ":8080", "http server addr")
+}
+
+func (cfg *StoreConfig) EnvParse() error {
+	return env.Parse(cfg)
+}
+
+func (cfg *StoreConfig) ConfigureFlags() {
+	storeInterval := new(uint)
+	fileStoragePath := new(string)
+	restore := new(bool)
+
 	if cfg.StoreInterval == nil {
-		cfg.StoreInterval = new(uint)
-		flag.UintVar(cfg.StoreInterval, "i", 1, "store interval")
+		cfg.StoreInterval = storeInterval
 	}
 
 	if cfg.FileStoragePath == nil {
-		cfg.FileStoragePath = new(string)
-		flag.StringVar(cfg.FileStoragePath, "f", "/tmp/metrics-db.json", "file storage path")
+		cfg.FileStoragePath = fileStoragePath
 	}
 
 	if cfg.Restore == nil {
-		cfg.Restore = new(bool)
-		flag.BoolVar(cfg.Restore, "r", true, "restore")
+		cfg.Restore = restore
 	}
 
-	flag.Parse()
-
-	return nil
+	flag.UintVar(storeInterval, "i", 1, "store interval")
+	flag.StringVar(fileStoragePath, "f", "/tmp/metrics-db.json", "file storage path")
+	flag.BoolVar(restore, "r", true, "restore")
 }
 
-func (cfg *ReportConfig) Parse() error {
-	if err := env.Parse(cfg); err != nil {
-		return err
-	}
+func (cfg *ReportConfig) EnvParse() error {
+	return env.Parse(cfg)
+}
+
+func (cfg *ReportConfig) ConfigureFlags() {
+	addr := new(string)
+	reportInterval := new(int)
+	pollInterval := new(int)
 
 	if cfg.Addr == nil {
-		cfg.Addr = new(string)
-		flag.StringVar(cfg.Addr, "a", "http://localhost:8080", "http server addr")
+		cfg.Addr = addr
 	}
 
 	if cfg.ReportInterval == nil {
-		cfg.ReportInterval = new(int)
-		flag.IntVar(cfg.ReportInterval, "r", 10, "report interval")
+		cfg.ReportInterval = reportInterval
 	}
 
 	if cfg.PollInterval == nil {
-		cfg.PollInterval = new(int)
-		flag.IntVar(cfg.PollInterval, "p", 2, "poll interval")
+		cfg.PollInterval = pollInterval
 	}
 
-	flag.Parse()
-
-	*cfg.Addr = normalizeAddr(*cfg.Addr)
-
-	return nil
+	flag.StringVar(addr, "a", "http://localhost:8080", "http server addr")
+	flag.IntVar(reportInterval, "r", 10, "report interval")
+	flag.IntVar(pollInterval, "p", 2, "poll interval")
 }
 
-func normalizeAddr(addr string) string {
-	if utf8.RuneCountInString(addr) < 4 || addr[:4] != "http" {
-		return "http://" + addr
+func (cfg *DBConfig) EnvParse() error {
+	return env.Parse(cfg)
+}
+
+func (cfg *DBConfig) ConfigureFlags() {
+	dsn := new(string)
+
+	if cfg.Dsn == nil {
+		cfg.Dsn = dsn
 	}
 
-	return addr
+	flag.StringVar(dsn, "d", "", "database dsn")
 }

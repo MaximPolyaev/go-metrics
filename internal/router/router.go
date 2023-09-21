@@ -1,6 +1,7 @@
 package router
 
 import (
+	"database/sql"
 	"net/http"
 
 	"github.com/MaximPolyaev/go-metrics/internal/logger"
@@ -11,9 +12,11 @@ import (
 
 const (
 	updatePattern       = "/update"
+	updatesPattern      = "/updates"
 	valuePattern        = "/value"
 	updateMetricPattern = updatePattern + "/{type}/{name}/{value}"
 	getMetricPattern    = valuePattern + "/{type}/{name}"
+	pingPattern         = "/ping"
 )
 
 type handler interface {
@@ -21,10 +24,16 @@ type handler interface {
 	GetValueFunc() http.HandlerFunc
 	MainFunc() http.HandlerFunc
 	UpdateByJSONFunc() http.HandlerFunc
+	BatchUpdateByJSONFunc() http.HandlerFunc
 	GetValueByJSONFunc() http.HandlerFunc
+	PingFunc(db *sql.DB) http.HandlerFunc
 }
 
-func CreateRouter(h handler, log *logger.Logger) *chi.Mux {
+func CreateRouter(
+	h handler,
+	log *logger.Logger,
+	db *sql.DB,
+) *chi.Mux {
 	router := chi.NewRouter()
 
 	router.Use(middleware.GzipMiddleware)
@@ -32,9 +41,12 @@ func CreateRouter(h handler, log *logger.Logger) *chi.Mux {
 	router.Use(chimiddleware.StripSlashes)
 
 	router.Post(updatePattern, h.UpdateByJSONFunc())
+	router.Post(updatesPattern, h.BatchUpdateByJSONFunc())
 	router.Post(valuePattern, h.GetValueByJSONFunc())
 	router.Post(updateMetricPattern, h.UpdateFunc())
 	router.Get(getMetricPattern, h.GetValueFunc())
+
+	router.Get(pingPattern, h.PingFunc(db))
 
 	router.Get("/", h.MainFunc())
 

@@ -1,17 +1,22 @@
 package handler_test
 
 import (
+	"context"
 	"github.com/MaximPolyaev/go-metrics/internal/metric"
 )
 
 type mockMetricService struct{}
 
-func (s *mockMetricService) Update(_ *metric.Metric) *metric.Metric {
+func (s *mockMetricService) Update(_ context.Context, _ *metric.Metric) *metric.Metric {
 	return nil
 }
 
-func (s *mockMetricService) Get(mm *metric.Metric) (*metric.Metric, bool) {
-	mSlice := s.GetAll()
+func (s *mockMetricService) BatchUpdate(_ context.Context, _ []metric.Metric) error {
+	return nil
+}
+
+func (s *mockMetricService) Get(ctx context.Context, mm *metric.Metric) (*metric.Metric, bool) {
+	mSlice := s.GetAll(ctx)
 
 	for _, mFromSlice := range mSlice {
 		if mFromSlice.ID == mm.ID && mFromSlice.MType == mm.MType {
@@ -22,7 +27,7 @@ func (s *mockMetricService) Get(mm *metric.Metric) (*metric.Metric, bool) {
 	return mm, false
 }
 
-func (s *mockMetricService) GetAll() []metric.Metric {
+func (s *mockMetricService) GetAll(_ context.Context) []metric.Metric {
 	var delta int64
 	var value float64
 

@@ -9,6 +9,45 @@ import (
 	"github.com/MaximPolyaev/go-metrics/internal/metric"
 )
 
+func (h *Handler) BatchUpdateByJSONFunc() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ct := r.Header.Get("Content-Type")
+		if ct != "application/json" {
+			http.Error(
+				w,
+				fmt.Sprintf("unexpected Content-Type: %s", ct),
+				http.StatusBadRequest,
+			)
+			return
+		}
+
+		buf, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer func() {
+			err := r.Body.Close()
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+		}()
+
+		var mSlice []metric.Metric
+		if err := json.Unmarshal(buf, &mSlice); err != nil {
+			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+			return
+		}
+
+		err = h.metricService.BatchUpdate(r.Context(), mSlice)
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+			return
+		}
+	}
+}
+
 func (h *Handler) UpdateByJSONFunc() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ct := r.Header.Get("Content-Type")
@@ -22,6 +61,14 @@ func (h *Handler) UpdateByJSONFunc() http.HandlerFunc {
 		}
 
 		buf, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		err = r.Body.Close()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -39,7 +86,7 @@ func (h *Handler) UpdateByJSONFunc() http.HandlerFunc {
 			return
 		}
 
-		mm = h.metricService.Update(mm)
+		mm = h.metricService.Update(r.Context(), mm)
 
 		resp, err := json.Marshal(mm)
 		if err != nil {
@@ -86,7 +133,7 @@ func (h *Handler) GetValueByJSONFunc() http.HandlerFunc {
 			return
 		}
 
-		mm, ok := h.metricService.Get(mm)
+		mm, ok := h.metricService.Get(r.Context(), mm)
 		if !ok {
 			mm.ValueInit()
 		}

@@ -60,14 +60,16 @@ func TestUpdateMetrics(t *testing.T) {
 		buf, err := io.ReadAll(reader)
 		assert.NoError(t, err)
 
-		var record = struct {
+		var records []struct {
 			ID string `json:"id"`
-		}{}
+		}
 
-		err = json.Unmarshal(buf, &record)
+		err = json.Unmarshal(buf, &records)
 		assert.NoError(t, err)
 
-		idsFromReqs = append(idsFromReqs, record.ID)
+		for _, r := range records {
+			idsFromReqs = append(idsFromReqs, r.ID)
+		}
 	})
 
 	srv := httptest.NewServer(mux)

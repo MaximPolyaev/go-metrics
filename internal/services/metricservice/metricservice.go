@@ -1,6 +1,7 @@
 package metricservice
 
 import (
+	"context"
 	"time"
 
 	"github.com/MaximPolyaev/go-metrics/internal/config"
@@ -9,16 +10,17 @@ import (
 )
 
 type MetricService struct {
-	memStorage  memStorage
+	mStorage    metricStorage
 	fileStorage fileStorage
 	storeCfg    *config.StoreConfig
 	log         *logger.Logger
 }
 
-type memStorage interface {
-	Set(mType metric.Type, val metric.Metric)
-	Get(mType metric.Type, id string) (val metric.Metric, ok bool)
-	GetAllByType(mType metric.Type) (values map[string]metric.Metric, ok bool)
+type metricStorage interface {
+	Set(ctx context.Context, mType metric.Type, val metric.Metric)
+	Get(ctx context.Context, mType metric.Type, id string) (val metric.Metric, ok bool)
+	GetAllByType(ctx context.Context, mType metric.Type) (values map[string]metric.Metric, ok bool)
+	BatchSet(ctx context.Context, mSlice []metric.Metric)
 }
 
 type fileStorage interface {
@@ -27,13 +29,13 @@ type fileStorage interface {
 }
 
 func New(
-	memStorage memStorage,
+	memStorage metricStorage,
 	fileStorage fileStorage,
 	storeCfg *config.StoreConfig,
 	log *logger.Logger,
 ) (*MetricService, error) {
 	ms := &MetricService{
-		memStorage:  memStorage,
+		mStorage:    memStorage,
 		fileStorage: fileStorage,
 		storeCfg:    storeCfg,
 		log:         log,
@@ -52,29 +54,86 @@ func New(
 	return ms, nil
 }
 
-func (s *MetricService) Update(mm *metric.Metric) *metric.Metric {
+func (s *MetricService) Update(ctx context.Context, mm *metric.Metric) *metric.Metric {
 	switch mm.MType {
 	case metric.GaugeType:
-		s.memStorage.Set(mm.MType, *mm)
+		s.mStorage.Set(context.Background(), mm.MType, *mm)
 	case metric.CounterType:
-		existDelta, ok := s.memStorage.Get(mm.MType, mm.ID)
+		existDelta, ok := s.mStorage.Get(ctx, mm.MType, mm.ID)
 
 		if ok {
 			*mm.Delta += *existDelta.Delta
 		}
 
-		s.memStorage.Set(mm.MType, *mm)
+		s.mStorage.Set(ctx, mm.MType, *mm)
 	}
 
 	if s.storeCfg != nil && *s.storeCfg.StoreInterval == 0 {
-		s.Sync()
+		s.Sync(context.Background())
 	}
 
 	return mm
 }
 
-func (s *MetricService) Get(mm *metric.Metric) (*metric.Metric, bool) {
-	existMm, ok := s.memStorage.Get(mm.MType, mm.ID)
+func (s *MetricService) BatchUpdate(ctx context.Context, mSlice []metric.Metric) error {
+	if len(mSlice) == 0 {
+		return nil
+	}
+
+	gaugeMap := make(map[string]metric.Metric)
+	counterMap := make(map[string]metric.Metric)
+
+	for _, m := range mSlice {
+		if err := m.ValidateWithValue(); err != nil {
+			return err
+		}
+
+		tmpKey := m.ID + "#" + m.MType.ToString()
+
+		if m.MType == metric.GaugeType {
+			gaugeMap[tmpKey] = m
+
+			continue
+		}
+
+		if m.MType == metric.CounterType {
+			existCounter, ok := counterMap[tmpKey]
+
+			if ok {
+				*existCounter.Delta += *m.Delta
+				continue
+			}
+
+			counterMap[tmpKey] = m
+		}
+	}
+
+	updSlice := make([]metric.Metric, 0, len(gaugeMap)+len(counterMap))
+
+	for k, m := range gaugeMap {
+		updSlice = append(updSlice, m)
+		delete(gaugeMap, k)
+	}
+
+	for k, m := range counterMap {
+		existM, ok := s.mStorage.Get(ctx, m.MType, m.ID)
+
+		if ok {
+			*m.Delta += *existM.Delta
+		}
+
+		updSlice = append(updSlice, m)
+
+		delete(counterMap, k)
+	}
+
+	s.mStorage.BatchSet(ctx, updSlice)
+
+	return nil
+}
+
+func (s *MetricService) Get(ctx context.Context, mm *metric.Metric) (*metric.Metric, bool) {
+	existMm, ok := s.mStorage.Get(ctx, mm.MType, mm.ID)
 
 	if !ok {
 		return mm, false
@@ -83,11 +142,11 @@ func (s *MetricService) Get(mm *metric.Metric) (*metric.Metric, bool) {
 	return &existMm, true
 }
 
-func (s *MetricService) GetAll() []metric.Metric {
+func (s *MetricService) GetAll(ctx context.Context) []metric.Metric {
 	var mSlice []metric.Metric
 
 	for _, mType := range metric.Types() {
-		metricMap, ok := s.memStorage.GetAllByType(mType)
+		metricMap, ok := s.mStorage.GetAllByType(ctx, mType)
 		if ok {
 			for _, m := range metricMap {
 				mSlice = append(mSlice, m)
@@ -98,8 +157,8 @@ func (s *MetricService) GetAll() []metric.Metric {
 	return mSlice
 }
 
-func (s *MetricService) Sync() {
-	if err := s.store(); err != nil {
+func (s *MetricService) Sync(ctx context.Context) {
+	if err := s.store(ctx); err != nil {
 		s.log.Error(err)
 	}
 }
@@ -111,7 +170,7 @@ func (s *MetricService) async() {
 		for {
 			<-storeInterval.C
 
-			if err := s.store(); err != nil {
+			if err := s.store(context.Background()); err != nil {
 				s.log.Error(err)
 			}
 		}
@@ -133,14 +192,14 @@ func (s *MetricService) restore() error {
 	}
 
 	for _, m := range mSlice {
-		s.Update(&m)
+		s.Update(context.Background(), &m)
 	}
 
 	return nil
 }
 
-func (s *MetricService) store() error {
-	mSlice := s.GetAll()
+func (s *MetricService) store(ctx context.Context) error {
+	mSlice := s.GetAll(ctx)
 	if mSlice == nil {
 		return nil
 	}

@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  pgsql:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: metrics
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_pgsql_data:/var/lib/postgresql/data
+
+volumes:
+  db_pgsql_data:
