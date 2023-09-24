@@ -14,7 +14,7 @@ func WithHashing(hashKey string) Middleware {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			reqHash := r.Header.Get("HashSHA256")
 			if reqHash == "" {
-				http.Error(w, "request without hash", http.StatusBadRequest)
+				next.ServeHTTP(w, r)
 				return
 			}
 
