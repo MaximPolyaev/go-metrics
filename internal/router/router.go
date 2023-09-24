@@ -37,7 +37,7 @@ func CreateRouter(
 ) *chi.Mux {
 	router := chi.NewRouter()
 
-	if hashKey != nil {
+	if hashKey != nil && *hashKey != "" {
 		router.Use(middleware.WithHashing(*hashKey))
 	}
 

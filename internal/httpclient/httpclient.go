@@ -84,7 +84,7 @@ func (c *HTTPClient) newUpdateReq(url string, body []byte) (*http.Request, error
 	req.Header.Add("Accept-Encoding", "gzip")
 	req.Header.Add("Content-Encoding", "gzip")
 
-	if c.hashKey != nil {
+	if c.hashKey != nil && *c.hashKey != "" {
 		req.Header.Add("HashSHA256", hash.Encode(buf.Bytes(), *c.hashKey))
 	}
 
