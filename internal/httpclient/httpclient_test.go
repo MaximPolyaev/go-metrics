@@ -70,12 +70,17 @@ func TestUpdateMetrics(t *testing.T) {
 		for _, r := range records {
 			idsFromReqs = append(idsFromReqs, r.ID)
 		}
+
+		hash := r.Header.Get("HashSHA256")
+
+		assert.True(t, hash != "")
 	})
 
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
-	client := NewHTTPClient(srv.URL)
+	hashKey := "hash_key"
+	client := NewHTTPClient(srv.URL, &hashKey)
 
 	stats := metric.Stats{}
 

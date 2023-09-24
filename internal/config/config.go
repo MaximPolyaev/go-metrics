@@ -32,6 +32,10 @@ type DBConfig struct {
 	Dsn *string `env:"DATABASE_DSN"`
 }
 
+type HashKeyConfig struct {
+	Key *string `env:"KEY"`
+}
+
 func NewAddressConfig() *AddressConfig {
 	return &AddressConfig{}
 }
@@ -46,6 +50,10 @@ func NewReportConfig() *ReportConfig {
 
 func NewDBConfig() *DBConfig {
 	return &DBConfig{}
+}
+
+func NewHashKeyConfig() *HashKeyConfig {
+	return &HashKeyConfig{}
 }
 
 func ParseCfgs(cfgs []Config) error {
@@ -151,4 +159,18 @@ func (cfg *DBConfig) ConfigureFlags() {
 	}
 
 	flag.StringVar(dsn, "d", "", "database dsn")
+}
+
+func (cfg *HashKeyConfig) EnvParse() error {
+	return env.Parse(cfg)
+}
+
+func (cfg *HashKeyConfig) ConfigureFlags() {
+	key := new(string)
+
+	if cfg.Key == nil {
+		cfg.Key = key
+	}
+
+	flag.StringVar(key, "k", "", "hash key")
 }

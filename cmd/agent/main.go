@@ -17,14 +17,15 @@ func main() {
 
 func run() error {
 	cfg := config.NewReportConfig()
+	hashCfg := config.NewHashKeyConfig()
 
-	if err := config.ParseCfgs([]config.Config{cfg}); err != nil {
+	if err := config.ParseCfgs([]config.Config{cfg, hashCfg}); err != nil {
 		return err
 	}
 
 	var mStats metric.Stats
 
-	httpClient := httpclient.NewHTTPClient(cfg.GetNormalizedAddress())
+	httpClient := httpclient.NewHTTPClient(cfg.GetNormalizedAddress(), hashCfg.Key)
 
 	poolInterval := time.NewTicker(time.Duration(*cfg.PollInterval) * time.Second)
 	reportInterval := time.NewTicker(time.Duration(*cfg.ReportInterval) * time.Second)
