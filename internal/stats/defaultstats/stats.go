@@ -1,8 +1,10 @@
-package metric
+package defaultstats
 
 import (
 	"math/rand"
 	"runtime"
+
+	"github.com/MaximPolyaev/go-metrics/internal/metric"
 )
 
 type (
@@ -12,24 +14,28 @@ type (
 		RandomValue int
 	}
 
-	GaugeMap   map[string]float64
-	CounterMap map[string]int64
+	gaugeMap   map[string]float64
+	counterMap map[string]int64
 )
 
-func ReadStats(stats *Stats) {
-	runtime.ReadMemStats(&stats.MemStats)
-
-	stats.PollCount += 1
-	stats.RandomValue = rand.Int()
+func New() *Stats {
+	return &Stats{}
 }
 
-func (s *Stats) AsMetrics() []Metric {
-	metrics := make([]Metric, 0, 30)
+func (s *Stats) ReadStats() {
+	runtime.ReadMemStats(&s.MemStats)
+
+	s.PollCount += 1
+	s.RandomValue = rand.Int()
+}
+
+func (s *Stats) AsMetrics() []metric.Metric {
+	metrics := make([]metric.Metric, 0, 30)
 
 	for k, v := range s.getGaugeMap() {
-		mm := Metric{
+		mm := metric.Metric{
 			ID:    k,
-			MType: GaugeType,
+			MType: metric.GaugeType,
 			Value: new(float64),
 		}
 
@@ -39,9 +45,9 @@ func (s *Stats) AsMetrics() []Metric {
 	}
 
 	for k, v := range s.getCounterMap() {
-		mm := Metric{
+		mm := metric.Metric{
 			ID:    k,
-			MType: CounterType,
+			MType: metric.CounterType,
 			Delta: new(int64),
 		}
 
@@ -53,8 +59,8 @@ func (s *Stats) AsMetrics() []Metric {
 	return metrics
 }
 
-func (s *Stats) getGaugeMap() GaugeMap {
-	return GaugeMap{
+func (s *Stats) getGaugeMap() gaugeMap {
+	return gaugeMap{
 		"Alloc":         float64(s.Alloc),
 		"BuckHashSys":   float64(s.BuckHashSys),
 		"GCCPUFraction": s.GCCPUFraction,
@@ -86,8 +92,8 @@ func (s *Stats) getGaugeMap() GaugeMap {
 	}
 }
 
-func (s *Stats) getCounterMap() CounterMap {
-	return CounterMap{
+func (s *Stats) getCounterMap() counterMap {
+	return counterMap{
 		"PollCount": s.PollCount,
 	}
 }

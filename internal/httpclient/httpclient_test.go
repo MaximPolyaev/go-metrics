@@ -3,12 +3,12 @@ package httpclient
 import (
 	"compress/gzip"
 	"encoding/json"
+	"github.com/MaximPolyaev/go-metrics/internal/stats/defaultstats"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/MaximPolyaev/go-metrics/internal/metric"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -82,7 +82,7 @@ func TestUpdateMetrics(t *testing.T) {
 	hashKey := "hash_key"
 	client := NewHTTPClient(srv.URL, &hashKey)
 
-	stats := metric.Stats{}
+	stats := defaultstats.New()
 
 	err := client.UpdateMetrics(stats.AsMetrics())
 	assert.NoError(t, err)

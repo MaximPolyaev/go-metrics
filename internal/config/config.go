@@ -36,6 +36,10 @@ type HashKeyConfig struct {
 	Key *string `env:"KEY"`
 }
 
+type RateConfig struct {
+	Limit *int `env:"KEY"`
+}
+
 func NewAddressConfig() *AddressConfig {
 	return &AddressConfig{}
 }
@@ -54,6 +58,10 @@ func NewDBConfig() *DBConfig {
 
 func NewHashKeyConfig() *HashKeyConfig {
 	return &HashKeyConfig{}
+}
+
+func NewRateConfig() *RateConfig {
+	return &RateConfig{}
 }
 
 func ParseCfgs(cfgs []Config) error {
@@ -173,4 +181,18 @@ func (cfg *HashKeyConfig) ConfigureFlags() {
 	}
 
 	flag.StringVar(key, "k", "", "hash key")
+}
+
+func (cfg *RateConfig) EnvParse() error {
+	return env.Parse(cfg)
+}
+
+func (cfg *RateConfig) ConfigureFlags() {
+	limit := new(int)
+
+	if cfg.Limit == nil {
+		cfg.Limit = limit
+	}
+
+	flag.IntVar(limit, "l", 0, "rate limit")
 }
