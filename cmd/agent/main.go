@@ -76,7 +76,11 @@ func computePushWorkerCount(rateLimit int) int {
 		return maxWorkerCount
 	}
 
-	return max(rateLimit, minWorkerCount)
+	if rateLimit < minWorkerCount {
+		return minWorkerCount
+	}
+
+	return rateLimit
 }
 
 func readStats(chS <-chan Stats) {

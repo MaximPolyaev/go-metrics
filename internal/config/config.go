@@ -37,7 +37,7 @@ type HashKeyConfig struct {
 }
 
 type RateConfig struct {
-	Limit *int `env:"KEY"`
+	Limit *int `env:"RATE_LIMIT"`
 }
 
 func NewAddressConfig() *AddressConfig {
