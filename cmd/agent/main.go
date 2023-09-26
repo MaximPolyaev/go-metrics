@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/MaximPolyaev/go-metrics/internal/config"
@@ -41,10 +44,10 @@ func run() error {
 	mStats := defaultstats.New()
 	gopStats := gopsutilstats.New(lg)
 
-	httpClient := httpclient.NewHTTPClient(cfg.GetNormalizedAddress(), hashCfg.Key)
+	httpClient := httpclient.NewHTTPClient(cfg.GetNormalizedAddress(), *hashCfg.Key)
 
 	chRead := make(chan Stats)
-	chPush := make(chan Stats)
+	chReport := make(chan Stats)
 
 	poolInterval := time.NewTicker(time.Duration(*cfg.PollInterval) * time.Second)
 	reportInterval := time.NewTicker(time.Duration(*cfg.ReportInterval) * time.Second)
@@ -56,17 +59,22 @@ func run() error {
 	pushRate := computePushWorkerCount(*rateCfg.Limit)
 
 	for w := 0; w < pushRate; w++ {
-		go updateMetrics(httpClient, chPush, lg)
+		go updateMetrics(httpClient, chReport, lg)
 	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	shutdownHandler(cancel)
 
 	for {
 		select {
 		case <-poolInterval.C:
-			chRead <- mStats
-			chRead <- gopStats
+			pushToChannel(chRead, mStats, gopStats)
 		case <-reportInterval.C:
-			chPush <- mStats
-			chPush <- gopStats
+			pushToChannel(chReport, mStats, gopStats)
+		case <-ctx.Done():
+			close(chRead)
+			close(chReport)
 		}
 	}
 }
@@ -83,6 +91,12 @@ func computePushWorkerCount(rateLimit int) int {
 	return rateLimit
 }
 
+func pushToChannel(ch chan<- Stats, sts ...Stats) {
+	for _, s := range sts {
+		ch <- s
+	}
+}
+
 func readStats(chS <-chan Stats) {
 	for s := range chS {
 		s.ReadStats()
@@ -95,4 +109,17 @@ func updateMetrics(httpClient *httpclient.HTTPClient, chS <-chan Stats, lg *logg
 			lg.Errorln(err)
 		}
 	}
+}
+
+func shutdownHandler(cancelFunc context.CancelFunc) {
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		<-sigs
+
+		cancelFunc()
+
+		os.Exit(0)
+	}()
 }

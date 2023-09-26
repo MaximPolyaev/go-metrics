@@ -15,12 +15,12 @@ import (
 type HTTPClient struct {
 	client  http.Client
 	baseURL string
-	hashKey *string
+	hashKey string
 }
 
 const updatesAction = "/updates/"
 
-func NewHTTPClient(baseURL string, hashKey *string) *HTTPClient {
+func NewHTTPClient(baseURL string, hashKey string) *HTTPClient {
 	return &HTTPClient{
 		client:  http.Client{},
 		baseURL: baseURL,
@@ -84,8 +84,8 @@ func (c *HTTPClient) newUpdateReq(url string, body []byte) (*http.Request, error
 	req.Header.Add("Accept-Encoding", "gzip")
 	req.Header.Add("Content-Encoding", "gzip")
 
-	if c.hashKey != nil && *c.hashKey != "" {
-		req.Header.Add("HashSHA256", hash.Encode(buf.Bytes(), *c.hashKey))
+	if c.hashKey != "" {
+		req.Header.Add("HashSHA256", hash.Encode(buf.Bytes(), c.hashKey))
 	}
 
 	return req, nil
