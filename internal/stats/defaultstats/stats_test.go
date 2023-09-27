@@ -1,4 +1,4 @@
-package metric
+package defaultstats
 
 import (
 	"testing"
@@ -6,17 +6,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestReadStats(t *testing.T) {
-	defaultStats := Stats{}
-	stats := Stats{}
+func TestStats_ReadStats(t *testing.T) {
+	defaultStats := New()
+	stats := New()
 
-	ReadStats(&stats)
+	stats.ReadStats()
 
 	assert.NotEqual(t, defaultStats, stats)
 }
 
 func TestStats_AsMetrics(t *testing.T) {
-	stats := Stats{}
+	stats := New()
 
 	assert.Len(t, stats.AsMetrics(), 29)
 }

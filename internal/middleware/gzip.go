@@ -1,19 +1,14 @@
 package middleware
 
 import (
-	"bytes"
 	"compress/gzip"
 	"io"
 	"net/http"
 	"strings"
 	"sync"
-)
 
-type bufWriter struct {
-	w          http.ResponseWriter
-	buf        *bytes.Buffer
-	statusCode int
-}
+	"github.com/MaximPolyaev/go-metrics/internal/httpbufwritter"
+)
 
 type compressReader struct {
 	r  io.ReadCloser
@@ -42,16 +37,17 @@ func GzipMiddleware(next http.Handler) http.Handler {
 			}()
 		}
 
-		bw := newBufWriter(w)
+		bw := httpbufwritter.New(w)
 
 		next.ServeHTTP(bw, r)
 
 		acceptEncoding := r.Header.Get("Accept-Encoding")
 		supportsGzip := strings.Contains(acceptEncoding, "gzip")
 		contentType := bw.Header().Get("Content-Type")
+
 		if supportsGzip && (contentType == "text/html" || contentType == "application/json") {
 			w.Header().Set("Content-Encoding", "gzip")
-			w.WriteHeader(bw.statusCode)
+			w.WriteHeader(bw.StatusCode())
 
 			gz := gzipPool.Get().(*gzip.Writer)
 			defer func() {
@@ -64,29 +60,17 @@ func GzipMiddleware(next http.Handler) http.Handler {
 
 			gz.Reset(w)
 
-			if _, err := gz.Write(bw.buf.Bytes()); err != nil {
+			if _, err := gz.Write(bw.Bytes()); err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 			}
 			return
 		}
 
-		w.WriteHeader(bw.statusCode)
-		if _, err := w.Write(bw.buf.Bytes()); err != nil {
+		w.WriteHeader(bw.StatusCode())
+		if _, err := w.Write(bw.Bytes()); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	})
-}
-
-func (c *bufWriter) Header() http.Header {
-	return c.w.Header()
-}
-
-func (c *bufWriter) Write(p []byte) (int, error) {
-	return c.buf.Write(p)
-}
-
-func (c *bufWriter) WriteHeader(statusCode int) {
-	c.statusCode = statusCode
 }
 
 func (c *compressReader) Read(p []byte) (n int, err error) {
@@ -98,15 +82,6 @@ func (c *compressReader) Close() error {
 		return err
 	}
 	return c.zr.Close()
-}
-func newBufWriter(w http.ResponseWriter) *bufWriter {
-	var buf []byte
-
-	return &bufWriter{
-		w:          w,
-		buf:        bytes.NewBuffer(buf),
-		statusCode: http.StatusOK,
-	}
 }
 
 func newCompressReader(r io.ReadCloser) (*compressReader, error) {

@@ -31,11 +31,13 @@ func run() error {
 	cfg := config.NewAddressConfig()
 	storeCfg := config.NewStoreConfig()
 	dbConfig := config.NewDBConfig()
+	hashCfg := config.NewHashKeyConfig()
 
 	configs := []config.Config{
 		cfg,
 		storeCfg,
 		dbConfig,
+		hashCfg,
 	}
 	err := config.ParseCfgs(configs)
 
@@ -83,7 +85,7 @@ func run() error {
 
 	return http.ListenAndServe(
 		*cfg.Addr,
-		router.CreateRouter(h, lg, dbConn),
+		router.CreateRouter(h, lg, dbConn, hashCfg.Key),
 	)
 }
 
