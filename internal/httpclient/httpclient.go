@@ -1,3 +1,4 @@
+// Package httpclient for communicate metrics server
 package httpclient
 
 import (
@@ -15,11 +16,14 @@ import (
 type HTTPClient struct {
 	client  http.Client
 	baseURL string
+	// hashKey - Hash key for communicate server
 	hashKey string
 }
 
+// updatesAction - action for push metrics
 const updatesAction = "/updates/"
 
+// NewHTTPClient - make new http client
 func NewHTTPClient(baseURL string, hashKey string) *HTTPClient {
 	return &HTTPClient{
 		client:  http.Client{},
@@ -28,6 +32,7 @@ func NewHTTPClient(baseURL string, hashKey string) *HTTPClient {
 	}
 }
 
+// UpdateMetrics - push metrics to server for update
 func (c *HTTPClient) UpdateMetrics(mSlice []metric.Metric) error {
 	body, err := json.Marshal(mSlice)
 	if err != nil {

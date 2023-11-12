@@ -11,6 +11,7 @@ import (
 	"github.com/MaximPolyaev/go-metrics/internal/retry"
 )
 
+// timeoutReqs - timeout execute request on DB
 const timeoutReqs = 10 * time.Second
 
 type Storage struct {
@@ -22,6 +23,7 @@ func New(db *sql.DB, log *logger.Logger) *Storage {
 	return &Storage{db: db, log: log}
 }
 
+// Init - init DB storage. Create required table
 func (s *Storage) Init() error {
 	ctx, cancel := context.WithTimeout(context.Background(), timeoutReqs)
 	defer cancel()
@@ -39,14 +41,17 @@ CREATE TABLE IF NOT EXISTS metrics (
 	return err
 }
 
+// Set - set metric to DB
 func (s *Storage) Set(ctx context.Context, mType metric.Type, val metric.Metric) {
 	retry.Retry(s.setHandler(ctx, mType, val), s.log)
 }
 
+// BatchSet - batch set metrics to DB
 func (s *Storage) BatchSet(ctx context.Context, mSlice []metric.Metric) {
 	retry.Retry(s.batchSetHandler(ctx, mSlice), s.log)
 }
 
+// Get - get metric from DB
 func (s *Storage) Get(ctx context.Context, mType metric.Type, id string) (val metric.Metric, ok bool) {
 	ctx, cancel := context.WithTimeout(ctx, timeoutReqs)
 	defer cancel()
@@ -85,6 +90,7 @@ func (s *Storage) Get(ctx context.Context, mType metric.Type, id string) (val me
 	return val, true
 }
 
+// GetAllByType - get all metrics from DB
 func (s *Storage) GetAllByType(ctx context.Context, mType metric.Type) (values map[string]metric.Metric, ok bool) {
 	ctx, cancel := context.WithTimeout(ctx, timeoutReqs)
 	defer cancel()

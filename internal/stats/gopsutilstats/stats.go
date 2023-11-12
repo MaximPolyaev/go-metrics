@@ -22,6 +22,7 @@ func New(log *logger.Logger) *Stats {
 	return &Stats{log: log}
 }
 
+// ReadStats read metric data by mem and cpu stats
 func (s *Stats) ReadStats() {
 	v, err := mem.VirtualMemory()
 	if err != nil {
@@ -48,6 +49,7 @@ func (s *Stats) ReadStats() {
 	}
 }
 
+// AsMetrics get stats as metrics
 func (s *Stats) AsMetrics() []metric.Metric {
 	metrics := make([]metric.Metric, 0, 30)
 

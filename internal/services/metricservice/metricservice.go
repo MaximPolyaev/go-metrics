@@ -1,3 +1,4 @@
+// Package metricservice work with metric data
 package metricservice
 
 import (
@@ -54,6 +55,7 @@ func New(
 	return ms, nil
 }
 
+// Update - update metric with storage
 func (s *MetricService) Update(ctx context.Context, mm *metric.Metric) *metric.Metric {
 	switch mm.MType {
 	case metric.GaugeType:
@@ -75,6 +77,7 @@ func (s *MetricService) Update(ctx context.Context, mm *metric.Metric) *metric.M
 	return mm
 }
 
+// BatchUpdate - batch update metrics with recalculate metrics arg
 func (s *MetricService) BatchUpdate(ctx context.Context, mSlice []metric.Metric) error {
 	if len(mSlice) == 0 {
 		return nil
@@ -120,6 +123,7 @@ func (s *MetricService) BatchUpdate(ctx context.Context, mSlice []metric.Metric)
 	return nil
 }
 
+// Get - get metric from storage
 func (s *MetricService) Get(ctx context.Context, mm *metric.Metric) (*metric.Metric, bool) {
 	existMm, ok := s.mStorage.Get(ctx, mm.MType, mm.ID)
 
@@ -130,6 +134,7 @@ func (s *MetricService) Get(ctx context.Context, mm *metric.Metric) (*metric.Met
 	return &existMm, true
 }
 
+// GetAll - get all metrics from storage
 func (s *MetricService) GetAll(ctx context.Context) []metric.Metric {
 	var mSlice []metric.Metric
 
@@ -145,6 +150,7 @@ func (s *MetricService) GetAll(ctx context.Context) []metric.Metric {
 	return mSlice
 }
 
+// Sync - sync all storage metrics with file storage
 func (s *MetricService) Sync(ctx context.Context) {
 	if err := s.store(ctx); err != nil {
 		s.log.Error(err)

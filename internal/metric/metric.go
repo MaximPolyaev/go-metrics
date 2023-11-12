@@ -39,6 +39,7 @@ func (t Type) Validate() error {
 	return errors.New("invalid metric type: " + t.ToString())
 }
 
+// ValueInit init metric value pointer
 func (m *Metric) ValueInit() {
 	switch m.MType {
 	case CounterType:

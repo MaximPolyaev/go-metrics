@@ -18,6 +18,7 @@ func New(filePath string) *Storage {
 	return &Storage{filePath: filePath}
 }
 
+// GetAll - get all metrics from file
 func (s *Storage) GetAll() ([]metric.Metric, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -44,6 +45,7 @@ func (s *Storage) GetAll() ([]metric.Metric, error) {
 	return mSlice, nil
 }
 
+// SetAll - set metrics to file
 func (s *Storage) SetAll(mSlice []metric.Metric) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

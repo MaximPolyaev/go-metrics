@@ -15,6 +15,7 @@ type compressReader struct {
 	zr *gzip.Reader
 }
 
+// GzipMiddleware compress request and response content for correct headers
 func GzipMiddleware(next http.Handler) http.Handler {
 	gzipPool := sync.Pool{New: func() any {
 		return gzip.NewWriter(io.Discard)
