@@ -23,7 +23,7 @@ func Example() {
 	http.Handle("/simple/update", h.UpdateFunc())
 	http.Handle("/simple/value", h.GetValueFunc())
 
-	err := http.ListenAndServe(":8080", h.UpdateByJSONFunc())
+	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
 		log.Fatal(err)
 	}
