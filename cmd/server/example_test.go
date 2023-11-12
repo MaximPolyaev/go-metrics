@@ -19,7 +19,7 @@ import (
 )
 
 func TestUpdateMetrics(t *testing.T) {
-	srv, err := makeTestHttpServer()
+	srv, err := makeTestHTTPServer()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -29,11 +29,13 @@ func TestUpdateMetrics(t *testing.T) {
 
 	do, err := http.DefaultClient.Do(req)
 	assert.NoError(t, err)
+	err = do.Body.Close()
+	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, do.StatusCode)
 }
 
 func BenchmarkUpdateMetrics(b *testing.B) {
-	srv, err := makeTestHttpServer()
+	srv, err := makeTestHTTPServer()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -43,11 +45,15 @@ func BenchmarkUpdateMetrics(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, _ = http.DefaultClient.Do(req)
+		do, _ := http.DefaultClient.Do(req)
+		err = do.Body.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 
-func makeTestHttpServer() (*httptest.Server, error) {
+func makeTestHTTPServer() (*httptest.Server, error) {
 	lg := logger.New(os.Stdout)
 	storeCfg := makeTestStoreConfig()
 
