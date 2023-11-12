@@ -29,6 +29,7 @@ func main() {
 
 func run() error {
 	cfg := config.NewAddressConfig()
+
 	storeCfg := config.NewStoreConfig()
 	dbConfig := config.NewDBConfig()
 	hashCfg := config.NewHashKeyConfig()
