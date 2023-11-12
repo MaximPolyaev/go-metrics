@@ -75,9 +75,12 @@ func run() error {
 		storeCfg,
 		lg,
 	)
-
 	if err != nil {
 		return err
+	}
+
+	if dbConn == nil {
+		shutdownHandler(metricService)
 	}
 
 	h := handler.New(metricService)
@@ -119,8 +122,6 @@ func initMetricService(
 		if err != nil {
 			return nil, err
 		}
-
-		shutdownHandler(mService)
 
 		return mService, nil
 	}

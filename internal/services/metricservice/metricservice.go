@@ -80,8 +80,7 @@ func (s *MetricService) BatchUpdate(ctx context.Context, mSlice []metric.Metric)
 		return nil
 	}
 
-	gaugeMap := make(map[string]metric.Metric)
-	counterMap := make(map[string]metric.Metric)
+	tmpMetricMap := make(map[string]metric.Metric, len(mSlice))
 
 	for _, m := range mSlice {
 		if err := m.ValidateWithValue(); err != nil {
@@ -90,41 +89,30 @@ func (s *MetricService) BatchUpdate(ctx context.Context, mSlice []metric.Metric)
 
 		tmpKey := m.ID + "#" + m.MType.ToString()
 
-		if m.MType == metric.GaugeType {
-			gaugeMap[tmpKey] = m
-
-			continue
-		}
-
 		if m.MType == metric.CounterType {
-			existCounter, ok := counterMap[tmpKey]
+			existCounter, ok := tmpMetricMap[tmpKey]
 
 			if ok {
 				*existCounter.Delta += *m.Delta
 				continue
 			}
-
-			counterMap[tmpKey] = m
 		}
+
+		tmpMetricMap[tmpKey] = m
 	}
 
-	updSlice := make([]metric.Metric, 0, len(gaugeMap)+len(counterMap))
+	updSlice := make([]metric.Metric, 0, len(tmpMetricMap))
 
-	for k, m := range gaugeMap {
-		updSlice = append(updSlice, m)
-		delete(gaugeMap, k)
-	}
+	for _, m := range tmpMetricMap {
+		if m.MType == metric.CounterType {
+			existM, ok := s.mStorage.Get(ctx, m.MType, m.ID)
 
-	for k, m := range counterMap {
-		existM, ok := s.mStorage.Get(ctx, m.MType, m.ID)
-
-		if ok {
-			*m.Delta += *existM.Delta
+			if ok {
+				*m.Delta += *existM.Delta
+			}
 		}
 
 		updSlice = append(updSlice, m)
-
-		delete(counterMap, k)
 	}
 
 	s.mStorage.BatchSet(ctx, updSlice)
