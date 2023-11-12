@@ -3,9 +3,10 @@ package filestorage
 import (
 	"encoding/json"
 	"errors"
-	"github.com/MaximPolyaev/go-metrics/internal/metric"
 	"os"
 	"sync"
+
+	"github.com/MaximPolyaev/go-metrics/internal/metric"
 )
 
 type Storage struct {

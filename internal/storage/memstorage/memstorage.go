@@ -2,8 +2,9 @@ package memstorage
 
 import (
 	"context"
-	"github.com/MaximPolyaev/go-metrics/internal/metric"
 	"sync"
+
+	"github.com/MaximPolyaev/go-metrics/internal/metric"
 )
 
 type Storage struct {

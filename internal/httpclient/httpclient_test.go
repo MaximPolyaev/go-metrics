@@ -3,11 +3,12 @@ package httpclient
 import (
 	"compress/gzip"
 	"encoding/json"
-	"github.com/MaximPolyaev/go-metrics/internal/stats/defaultstats"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/MaximPolyaev/go-metrics/internal/stats/defaultstats"
 
 	"github.com/stretchr/testify/assert"
 )
