@@ -61,7 +61,7 @@ func Test_memStorage_Get(t *testing.T) {
 	}
 }
 
-func Test_memStorage_GetValuesByNamespace(t *testing.T) {
+func Test_memStorage_GetAllByType(t *testing.T) {
 	s := New()
 
 	delta := int64(1)
@@ -102,5 +102,43 @@ func Test_memStorage_GetValuesByNamespace(t *testing.T) {
 			assert.Equal(t, tt.wantValues, gotValues)
 			assert.Equal(t, tt.wantOk, gotOk)
 		})
+	}
+}
+
+func Benchmark_memStorage_Get(b *testing.B) {
+	s := New()
+
+	delta := int64(1)
+
+	wantVal := metric.Metric{
+		ID:    "test id",
+		MType: metric.CounterType,
+		Delta: &delta,
+	}
+
+	s.Set(context.TODO(), metric.CounterType, wantVal)
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		s.Get(context.TODO(), metric.CounterType, "test id")
+	}
+}
+
+func Benchmark_memStorage_GetAllByType(b *testing.B) {
+	s := New()
+
+	delta := int64(1)
+
+	wantVal := metric.Metric{
+		ID:    "test id",
+		MType: metric.CounterType,
+		Delta: &delta,
+	}
+
+	s.Set(context.TODO(), metric.CounterType, wantVal)
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		s.GetAllByType(context.TODO(), metric.CounterType)
 	}
 }
