@@ -1,11 +1,15 @@
+// Package config for configure services
+// Package will be parsing configs
 package config
 
 import (
 	"flag"
-	"github.com/caarlos0/env/v9"
 	"unicode/utf8"
+
+	"github.com/caarlos0/env/v9"
 )
 
+// Config - standard config interface
 type Config interface {
 	EnvParse() error
 	ConfigureFlags()
@@ -64,6 +68,7 @@ func NewRateConfig() *RateConfig {
 	return &RateConfig{}
 }
 
+// ParseCfgs - parse any configs
 func ParseCfgs(cfgs []Config) error {
 	for _, cfg := range cfgs {
 		if err := cfg.EnvParse(); err != nil {

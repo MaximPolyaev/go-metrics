@@ -1,3 +1,4 @@
+// Package metricservice work with metric data
 package metricservice
 
 import (
@@ -54,6 +55,7 @@ func New(
 	return ms, nil
 }
 
+// Update - update metric with storage
 func (s *MetricService) Update(ctx context.Context, mm *metric.Metric) *metric.Metric {
 	switch mm.MType {
 	case metric.GaugeType:
@@ -75,13 +77,13 @@ func (s *MetricService) Update(ctx context.Context, mm *metric.Metric) *metric.M
 	return mm
 }
 
+// BatchUpdate - batch update metrics with recalculate metrics arg
 func (s *MetricService) BatchUpdate(ctx context.Context, mSlice []metric.Metric) error {
 	if len(mSlice) == 0 {
 		return nil
 	}
 
-	gaugeMap := make(map[string]metric.Metric)
-	counterMap := make(map[string]metric.Metric)
+	tmpMetricMap := make(map[string]metric.Metric, len(mSlice))
 
 	for _, m := range mSlice {
 		if err := m.ValidateWithValue(); err != nil {
@@ -90,41 +92,30 @@ func (s *MetricService) BatchUpdate(ctx context.Context, mSlice []metric.Metric)
 
 		tmpKey := m.ID + "#" + m.MType.ToString()
 
-		if m.MType == metric.GaugeType {
-			gaugeMap[tmpKey] = m
-
-			continue
-		}
-
 		if m.MType == metric.CounterType {
-			existCounter, ok := counterMap[tmpKey]
+			existCounter, ok := tmpMetricMap[tmpKey]
 
 			if ok {
 				*existCounter.Delta += *m.Delta
 				continue
 			}
-
-			counterMap[tmpKey] = m
 		}
+
+		tmpMetricMap[tmpKey] = m
 	}
 
-	updSlice := make([]metric.Metric, 0, len(gaugeMap)+len(counterMap))
+	updSlice := make([]metric.Metric, 0, len(tmpMetricMap))
 
-	for k, m := range gaugeMap {
-		updSlice = append(updSlice, m)
-		delete(gaugeMap, k)
-	}
+	for _, m := range tmpMetricMap {
+		if m.MType == metric.CounterType {
+			existM, ok := s.mStorage.Get(ctx, m.MType, m.ID)
 
-	for k, m := range counterMap {
-		existM, ok := s.mStorage.Get(ctx, m.MType, m.ID)
-
-		if ok {
-			*m.Delta += *existM.Delta
+			if ok {
+				*m.Delta += *existM.Delta
+			}
 		}
 
 		updSlice = append(updSlice, m)
-
-		delete(counterMap, k)
 	}
 
 	s.mStorage.BatchSet(ctx, updSlice)
@@ -132,6 +123,7 @@ func (s *MetricService) BatchUpdate(ctx context.Context, mSlice []metric.Metric)
 	return nil
 }
 
+// Get - get metric from storage
 func (s *MetricService) Get(ctx context.Context, mm *metric.Metric) (*metric.Metric, bool) {
 	existMm, ok := s.mStorage.Get(ctx, mm.MType, mm.ID)
 
@@ -142,6 +134,7 @@ func (s *MetricService) Get(ctx context.Context, mm *metric.Metric) (*metric.Met
 	return &existMm, true
 }
 
+// GetAll - get all metrics from storage
 func (s *MetricService) GetAll(ctx context.Context) []metric.Metric {
 	var mSlice []metric.Metric
 
@@ -157,6 +150,7 @@ func (s *MetricService) GetAll(ctx context.Context) []metric.Metric {
 	return mSlice
 }
 
+// Sync - sync all storage metrics with file storage
 func (s *MetricService) Sync(ctx context.Context) {
 	if err := s.store(ctx); err != nil {
 		s.log.Error(err)

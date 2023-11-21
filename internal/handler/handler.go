@@ -24,12 +24,14 @@ type metricService interface {
 	BatchUpdate(ctx context.Context, mSlice []metric.Metric) error
 }
 
+// New - make handlers structure
 func New(mService metricService) *Handler {
 	return &Handler{
 		metricService: mService,
 	}
 }
 
+// PingFunc - ping db connection
 func (h *Handler) PingFunc(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
@@ -44,6 +46,7 @@ func (h *Handler) PingFunc(db *sql.DB) http.HandlerFunc {
 	}
 }
 
+// MainFunc - html metrics list
 func (h *Handler) MainFunc() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var list string
@@ -63,6 +66,7 @@ func (h *Handler) MainFunc() http.HandlerFunc {
 	}
 }
 
+// UpdateFunc - update metric by request string
 func (h *Handler) UpdateFunc() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		mm := metric.Metric{
@@ -98,6 +102,7 @@ func (h *Handler) UpdateFunc() http.HandlerFunc {
 	}
 }
 
+// GetValueFunc - get value metric by req
 func (h *Handler) GetValueFunc() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		mType := metric.Type(chi.URLParam(r, "type"))

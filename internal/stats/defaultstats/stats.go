@@ -22,6 +22,7 @@ func New() *Stats {
 	return &Stats{}
 }
 
+// ReadStats - read metric data by runtime stats with update custom fields
 func (s *Stats) ReadStats() {
 	runtime.ReadMemStats(&s.MemStats)
 
@@ -29,6 +30,7 @@ func (s *Stats) ReadStats() {
 	s.RandomValue = rand.Int()
 }
 
+// AsMetrics get stats as metrics
 func (s *Stats) AsMetrics() []metric.Metric {
 	metrics := make([]metric.Metric, 0, 30)
 

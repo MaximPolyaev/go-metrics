@@ -1,3 +1,4 @@
+// Package router configure middlewares and request patterns for run any handlers
 package router
 
 import (

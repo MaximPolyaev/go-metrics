@@ -2,6 +2,7 @@ package handler_test
 
 import (
 	"context"
+
 	"github.com/MaximPolyaev/go-metrics/internal/metric"
 )
 

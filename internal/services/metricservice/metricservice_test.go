@@ -120,6 +120,39 @@ func TestMetricService_Update(t *testing.T) {
 	}
 }
 
+func BenchmarkMetricService_Update(b *testing.B) {
+	b.Run("gauge", func(b *testing.B) {
+		s, _ := New(mockMemStorage{}, nil, nil, nil)
+
+		mm := metric.Metric{
+			ID:    "test id",
+			MType: metric.GaugeType,
+			Value: new(float64),
+		}
+		*mm.Value = 2
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			s.Update(context.TODO(), &mm)
+		}
+	})
+
+	b.Run("counter", func(b *testing.B) {
+		s, _ := New(mockMemStorage{}, nil, nil, nil)
+
+		mm := metric.Metric{
+			ID:    "test id",
+			MType: metric.CounterType,
+			Delta: new(int64),
+		}
+		*mm.Delta = 2
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			s.Update(context.TODO(), &mm)
+		}
+	})
+}
+
 func (s mockMemStorage) Set(_ context.Context, _ metric.Type, _ metric.Metric) {}
 func (s mockMemStorage) Get(ctx context.Context, mType metric.Type, id string) (val metric.Metric, ok bool) {
 	metricMap, ok := s.GetAllByType(ctx, mType)

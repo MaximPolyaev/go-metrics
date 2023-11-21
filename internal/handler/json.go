@@ -9,6 +9,7 @@ import (
 	"github.com/MaximPolyaev/go-metrics/internal/metric"
 )
 
+// BatchUpdateByJSONFunc - batch update metrics by json
 func (h *Handler) BatchUpdateByJSONFunc() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ct := r.Header.Get("Content-Type")
@@ -48,6 +49,7 @@ func (h *Handler) BatchUpdateByJSONFunc() http.HandlerFunc {
 	}
 }
 
+// UpdateByJSONFunc - update metric by json
 func (h *Handler) UpdateByJSONFunc() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ct := r.Header.Get("Content-Type")
@@ -103,6 +105,7 @@ func (h *Handler) UpdateByJSONFunc() http.HandlerFunc {
 	}
 }
 
+// GetValueByJSONFunc - get metric value by json
 func (h *Handler) GetValueByJSONFunc() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ct := r.Header.Get("Content-Type")

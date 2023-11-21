@@ -1,3 +1,4 @@
+// Package retry allows any run request to DB
 package retry
 
 import (

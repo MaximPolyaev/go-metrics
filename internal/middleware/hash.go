@@ -9,6 +9,7 @@ import (
 	"github.com/MaximPolyaev/go-metrics/internal/httpbufwritter"
 )
 
+// WithHashing - check hash key with request body for access process
 func WithHashing(hashKey string) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
