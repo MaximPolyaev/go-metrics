@@ -1,3 +1,4 @@
+// Package httpbufwritter используется для буферизации HTTP запросов
 package httpbufwritter
 
 import (

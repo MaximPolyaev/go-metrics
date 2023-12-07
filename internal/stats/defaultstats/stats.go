@@ -1,3 +1,4 @@
+// Package defaultstats - это пакет для чтения метрик системы
 package defaultstats
 
 import (

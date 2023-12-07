@@ -1,3 +1,4 @@
+// Package db для инициализации подключения к БД
 package db
 
 import (

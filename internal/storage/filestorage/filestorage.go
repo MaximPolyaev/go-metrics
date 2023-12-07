@@ -1,3 +1,4 @@
+// Package filestorage - пакет хранения данных в JSON файле
 package filestorage
 
 import (

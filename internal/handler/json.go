@@ -28,15 +28,15 @@ func (h *Handler) BatchUpdateByJSONFunc() http.HandlerFunc {
 			return
 		}
 		defer func() {
-			err := r.Body.Close()
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+			closeErr := r.Body.Close()
+			if closeErr != nil {
+				http.Error(w, closeErr.Error(), http.StatusInternalServerError)
 			}
 		}()
 
 		var mSlice []metric.Metric
-		if err := json.Unmarshal(buf, &mSlice); err != nil {
-			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		if unmarshalErr := json.Unmarshal(buf, &mSlice); unmarshalErr != nil {
+			http.Error(w, unmarshalErr.Error(), http.StatusUnprocessableEntity)
 			return
 		}
 
@@ -78,13 +78,13 @@ func (h *Handler) UpdateByJSONFunc() http.HandlerFunc {
 
 		mm := new(metric.Metric)
 
-		if err := json.Unmarshal(buf, mm); err != nil {
-			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		if unmarshalErr := json.Unmarshal(buf, mm); unmarshalErr != nil {
+			http.Error(w, unmarshalErr.Error(), http.StatusUnprocessableEntity)
 			return
 		}
 
-		if err := mm.ValidateWithValue(); err != nil {
-			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		if validateErr := mm.ValidateWithValue(); validateErr != nil {
+			http.Error(w, validateErr.Error(), http.StatusUnprocessableEntity)
 			return
 		}
 
@@ -126,13 +126,13 @@ func (h *Handler) GetValueByJSONFunc() http.HandlerFunc {
 
 		mm := new(metric.Metric)
 
-		if err := json.Unmarshal(buf, mm); err != nil {
-			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		if unmarshalErr := json.Unmarshal(buf, mm); unmarshalErr != nil {
+			http.Error(w, unmarshalErr.Error(), http.StatusUnprocessableEntity)
 			return
 		}
 
-		if err := mm.Validate(); err != nil {
-			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		if validateErr := mm.Validate(); validateErr != nil {
+			http.Error(w, validateErr.Error(), http.StatusUnprocessableEntity)
 			return
 		}
 

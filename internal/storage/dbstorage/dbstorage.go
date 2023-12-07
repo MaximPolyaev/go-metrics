@@ -1,3 +1,4 @@
+// Package dbstorage - используется для взаимодействия с БД pgsql
 package dbstorage
 
 import (
@@ -98,9 +99,9 @@ func (s *Storage) GetAllByType(ctx context.Context, mType metric.Type) (values m
 	query := `SELECT id, delta, value FROM metrics WHERE type = $1`
 	rows, err := s.db.QueryContext(ctx, query, mType.ToString())
 	defer func() {
-		err := rows.Close()
-		if err != nil {
-			s.log.Error(err)
+		closeErr := rows.Close()
+		if closeErr != nil {
+			s.log.Error(closeErr)
 		}
 	}()
 
@@ -156,7 +157,7 @@ func (s *Storage) GetAllByType(ctx context.Context, mType metric.Type) (values m
 
 func (s *Storage) setHandler(ctx context.Context, mType metric.Type, val metric.Metric) func() error {
 	return func() error {
-		ctx, cancel := context.WithTimeout(ctx, timeoutReqs)
+		ctxWithTTL, cancel := context.WithTimeout(ctx, timeoutReqs)
 		defer cancel()
 
 		query := `
@@ -179,7 +180,7 @@ DO UPDATE SET delta = $3, value = $4;
 		}
 
 		_, err := s.db.ExecContext(
-			ctx,
+			ctxWithTTL,
 			query,
 			val.ID,
 			mType.ToString(),
@@ -193,10 +194,10 @@ DO UPDATE SET delta = $3, value = $4;
 
 func (s *Storage) batchSetHandler(ctx context.Context, mSlice []metric.Metric) func() error {
 	return func() error {
-		ctx, cancel := context.WithTimeout(ctx, timeoutReqs)
+		ctxWithTTL, cancel := context.WithTimeout(ctx, timeoutReqs)
 		defer cancel()
 
-		tx, err := s.db.BeginTx(ctx, nil)
+		tx, err := s.db.BeginTx(ctxWithTTL, nil)
 		if err != nil {
 			return err
 		}
@@ -208,7 +209,7 @@ ON CONFLICT (id, type)
 DO UPDATE SET delta = $3, value = $4;	
 `
 
-		stmt, err := tx.PrepareContext(ctx, query)
+		stmt, err := tx.PrepareContext(ctxWithTTL, query)
 		if err != nil {
 			return err
 		}
@@ -227,7 +228,7 @@ DO UPDATE SET delta = $3, value = $4;
 				mValue.Float64 = *m.Value
 			}
 
-			if _, err := stmt.ExecContext(ctx, m.ID, m.MType.ToString(), mDelta, mValue); err != nil {
+			if _, err := stmt.ExecContext(ctxWithTTL, m.ID, m.MType.ToString(), mDelta, mValue); err != nil {
 				return err
 			}
 		}

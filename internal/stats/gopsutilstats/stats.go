@@ -1,3 +1,4 @@
+// Package gopsutilstats - пакет для чтения специальных метрик
 package gopsutilstats
 
 import (

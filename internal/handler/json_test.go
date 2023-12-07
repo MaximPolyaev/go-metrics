@@ -2,7 +2,6 @@ package handler_test
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -123,9 +122,8 @@ func TestHandler_UpdateByJSONFunc(t *testing.T) {
 				*tt.body.mm.Value = tt.body.value
 
 				body, err := json.Marshal(tt.body.mm)
-				fmt.Println(string(body))
-				reader = strings.NewReader(string(body))
 				assert.NoError(t, err)
+				reader = strings.NewReader(string(body))
 			}
 
 			r := httptest.NewRequest(tt.method, tt.URL, reader)
@@ -228,7 +226,6 @@ func TestHandler_GetValueByJSONFunc(t *testing.T) {
 
 			if tt.mm != nil {
 				body, err := json.Marshal(tt.mm)
-				fmt.Println(string(body))
 				reader = strings.NewReader(string(body))
 				assert.NoError(t, err)
 			}

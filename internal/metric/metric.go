@@ -1,3 +1,4 @@
+// Package metric используется для взаимодействия с сущностью метрики
 package metric
 
 import (

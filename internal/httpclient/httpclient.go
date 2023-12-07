@@ -50,16 +50,19 @@ func (c *HTTPClient) UpdateMetrics(mSlice []metric.Metric) error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		body, err := io.ReadAll(resp.Body)
+		readBody, readBodyErr := io.ReadAll(resp.Body)
 
-		defer func() { _ = resp.Body.Close() }()
+		closeErr := resp.Body.Close()
+		if closeErr != nil {
+			return closeErr
+		}
 
 		errorMsg := "not update metrics, err: "
 
-		if err != nil {
-			errorMsg += err.Error()
+		if readBodyErr != nil {
+			errorMsg += readBodyErr.Error()
 		} else {
-			errorMsg += string(body)
+			errorMsg += string(readBody)
 		}
 
 		return errors.New(errorMsg)
@@ -90,7 +93,12 @@ func (c *HTTPClient) newUpdateReq(url string, body []byte) (*http.Request, error
 	req.Header.Add("Content-Encoding", "gzip")
 
 	if c.hashKey != "" {
-		req.Header.Add("HashSHA256", hash.Encode(buf.Bytes(), c.hashKey))
+		encodedHash, err := hash.Encode(buf.Bytes(), c.hashKey)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Add("HashSHA256", encodedHash)
 	}
 
 	return req, nil

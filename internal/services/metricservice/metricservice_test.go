@@ -122,7 +122,10 @@ func TestMetricService_Update(t *testing.T) {
 
 func BenchmarkMetricService_Update(b *testing.B) {
 	b.Run("gauge", func(b *testing.B) {
-		s, _ := New(mockMemStorage{}, nil, nil, nil)
+		s, err := New(mockMemStorage{}, nil, nil, nil)
+		if err != nil {
+			panic(err)
+		}
 
 		mm := metric.Metric{
 			ID:    "test id",
@@ -138,7 +141,10 @@ func BenchmarkMetricService_Update(b *testing.B) {
 	})
 
 	b.Run("counter", func(b *testing.B) {
-		s, _ := New(mockMemStorage{}, nil, nil, nil)
+		s, err := New(mockMemStorage{}, nil, nil, nil)
+		if err != nil {
+			panic(err)
+		}
 
 		mm := metric.Metric{
 			ID:    "test id",

@@ -64,8 +64,8 @@ func run() error {
 		}
 
 		defer func() {
-			if err := dbConn.Close(); err != nil {
-				lg.Error(err)
+			if closeErr := dbConn.Close(); closeErr != nil {
+				lg.Error(closeErr)
 			}
 		}()
 	}
