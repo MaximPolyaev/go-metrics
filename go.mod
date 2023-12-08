@@ -3,6 +3,7 @@ module github.com/MaximPolyaev/go-metrics
 go 1.21
 
 require (
+	github.com/breml/errchkjson v0.3.6
 	github.com/caarlos0/env/v9 v9.0.0
 	github.com/esimonov/ifshort v1.0.4
 	github.com/go-chi/chi/v5 v5.0.10
@@ -11,7 +12,7 @@ require (
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.8.4
-	golang.org/x/tools v0.14.0
+	golang.org/x/tools v0.16.0
 	honnef.co/go/tools v0.4.6
 )
 
@@ -29,7 +30,7 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
 	golang.org/x/crypto v0.14.0 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20230307190834-24139beb5833 // indirect
-	golang.org/x/mod v0.13.0 // indirect
+	golang.org/x/mod v0.14.0 // indirect
 	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

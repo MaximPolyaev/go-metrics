@@ -2,7 +2,7 @@
 // - стандартных статических анализаторов пакета golang.org/x/tools/go/analysis/passes;
 // - всех анализаторов класса SA пакета staticcheck.io;
 // - не менее одного анализатора остальных классов пакета staticcheck.io;
-// - двух или более любых публичных анализаторов;
+// - два публичных анализатора;
 // - собственный анализатор, запрещающий использовать прямой вызов os.Exit в функции main пакета main;
 // - собственный анализатор, проверяющий игнорирование ошибок.
 package main
@@ -10,6 +10,7 @@ package main
 import (
 	"github.com/MaximPolyaev/go-metrics/internal/linters/errcheckanalyzer"
 	"github.com/MaximPolyaev/go-metrics/internal/linters/osexitanalyzer"
+	"github.com/breml/errchkjson"
 	ifshort "github.com/esimonov/ifshort/pkg/analyzer"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/multichecker"
@@ -40,6 +41,8 @@ func main() {
 		shift.Analyzer,
 		// проверка возможности использовать короткий синтаксис if
 		ifshort.Analyzer,
+		// проверка типов передаваемых функциям кодирования json
+		errchkjson.NewAnalyzer(),
 	}
 
 	// все анализаторы класса SA пакета staticcheck.io
