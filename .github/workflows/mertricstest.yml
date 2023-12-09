@@ -60,7 +60,7 @@ jobs:
       - name: Build server binary
         run: |
           cd cmd/server
-          go build -buildvcs=false -o server
+          go build -buildvcs=false -o server -ldflags "-X main.buildCommit=$GITHUB_HEAD_REF -X main.buildDate=$(shell date +'%Y/%m/%d %H:%M:%S')"
 
       - name: "Code increment #1"
         if: |
@@ -86,7 +86,7 @@ jobs:
       - name: Build agent binary
         run: |
           cd cmd/agent
-          go build -buildvcs=false  -o agent
+          go build -buildvcs=false  -o agent -ldflags "-X main.buildCommit=$GITHUB_HEAD_REF -X main.buildDate=$(shell date +'%Y/%m/%d %H:%M:%S')"
 
       - name: "Code increment #2"
         if: |

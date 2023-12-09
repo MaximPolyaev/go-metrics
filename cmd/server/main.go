@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -21,10 +22,24 @@ import (
 	"github.com/MaximPolyaev/go-metrics/internal/storage/memstorage"
 )
 
+var (
+	buildVersion string = "N/A"
+	buildDate    string = "N/A"
+	buildCommit  string = "N/A"
+)
+
 func main() {
+	printAppInfo()
+
 	if err := run(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func printAppInfo() {
+	fmt.Println("Build version:", buildVersion)
+	fmt.Println("Build date:", buildDate)
+	fmt.Println("Build commit:", buildCommit)
 }
 
 func run() error {
