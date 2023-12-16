@@ -78,7 +78,8 @@ jobs:
           github.head_ref == 'iter11' ||
           github.head_ref == 'iter12' ||
           github.head_ref == 'iter13' ||
-          github.head_ref == 'iter14'
+          github.head_ref == 'iter14' ||
+          github.head_ref == 'iter23'
         run: |
           metricstest -test.v -test.run=^TestIteration1$ \
             -binary-path=cmd/server/server
