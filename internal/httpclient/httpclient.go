@@ -29,13 +29,16 @@ type Encoder interface {
 const updatesAction = "/updates/"
 
 // NewHTTPClient - make new http client
-func NewHTTPClient(baseURL string, hashKey string, encoder Encoder) *HTTPClient {
+func NewHTTPClient(baseURL string, hashKey string) *HTTPClient {
 	return &HTTPClient{
 		client:  http.Client{},
 		baseURL: baseURL,
 		hashKey: hashKey,
-		encoder: encoder,
 	}
+}
+
+func (c *HTTPClient) WithCryptoEncoder(encoder Encoder) {
+	c.encoder = encoder
 }
 
 // UpdateMetrics - push metrics to server for update

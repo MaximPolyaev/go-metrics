@@ -71,8 +71,11 @@ func run() error {
 	httpClient := httpclient.NewHTTPClient(
 		cfg.GetNormalizedAddress(),
 		*cfg.HashKey,
-		cryptoEncoder,
 	)
+
+	if cryptoEncoder != nil {
+		httpClient.WithCryptoEncoder(cryptoEncoder)
+	}
 
 	chRead := make(chan Stats)
 	chReport := make(chan Stats)
