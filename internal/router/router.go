@@ -38,13 +38,13 @@ func CreateRouter(
 	h handler,
 	log *logger.Logger,
 	db *sql.DB,
-	hashKey *string,
+	hashKey string,
 	cryptoDecoder CryptoDecoder,
 ) *chi.Mux {
 	router := chi.NewRouter()
 
-	if hashKey != nil && *hashKey != "" {
-		router.Use(middleware.WithHashing(*hashKey))
+	if hashKey != "" {
+		router.Use(middleware.WithHashing(hashKey))
 	}
 
 	router.Use(middleware.GzipMiddleware)

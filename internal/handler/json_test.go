@@ -108,7 +108,7 @@ func TestHandler_UpdateByJSONFunc(t *testing.T) {
 
 	h := handler.New(&mockMetricService{})
 	lg := logger.New(os.Stdout)
-	muxRouter := router.CreateRouter(h, lg, nil, nil, nil)
+	muxRouter := router.CreateRouter(h, lg, nil, "", nil)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -218,7 +218,7 @@ func TestHandler_GetValueByJSONFunc(t *testing.T) {
 
 	h := handler.New(&mockMetricService{})
 	lg := logger.New(os.Stdout)
-	muxRouter := router.CreateRouter(h, lg, nil, nil, nil)
+	muxRouter := router.CreateRouter(h, lg, nil, "", nil)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -53,16 +53,12 @@ func printAppInfo() error {
 }
 
 func run() error {
-	cfg := config.NewReportConfig()
-	hashCfg := config.NewHashKeyConfig()
-	rateCfg := config.NewRateConfig()
-	cryptoCfg := config.NewCryptoConfig()
-
-	if err := config.ParseCfgs([]config.Config{cfg, hashCfg, rateCfg, cryptoCfg}); err != nil {
+	cfg := config.NewAgentConfig()
+	if err := cfg.Parse(); err != nil {
 		return err
 	}
 
-	cryptoEncoder, err := makeCryptoEncoder(cryptoCfg)
+	cryptoEncoder, err := makeCryptoEncoder(*cfg.CryptoKey)
 	if err != nil {
 		return err
 	}
@@ -74,7 +70,7 @@ func run() error {
 
 	httpClient := httpclient.NewHTTPClient(
 		cfg.GetNormalizedAddress(),
-		*hashCfg.Key,
+		*cfg.HashKey,
 		cryptoEncoder,
 	)
 
@@ -88,7 +84,7 @@ func run() error {
 		go readStats(chRead)
 	}
 
-	pushRate := computePushWorkerCount(*rateCfg.Limit)
+	pushRate := computePushWorkerCount(*cfg.RateLimit)
 
 	for w := 0; w < pushRate; w++ {
 		go updateMetrics(httpClient, chReport, lg)
@@ -111,12 +107,12 @@ func run() error {
 	}
 }
 
-func makeCryptoEncoder(cryptoCfg *config.CryptoConfig) (*crypto.Encoder, error) {
-	if cryptoCfg.CryptoKey == nil || *cryptoCfg.CryptoKey == "" {
+func makeCryptoEncoder(cryptoKey string) (*crypto.Encoder, error) {
+	if cryptoKey == "" {
 		return nil, nil
 	}
 
-	publicKey, err := crypto.LoadPublicKey(*cryptoCfg.CryptoKey)
+	publicKey, err := crypto.LoadPublicKey(cryptoKey)
 
 	if err != nil {
 		return nil, err
