@@ -45,8 +45,8 @@ func main() {
 func printAppInfo() error {
 	_, err := fmt.Println(
 		"Build version:", buildVersion,
-		"Build date:", buildDate,
-		"Build commit:", buildCommit,
+		"\nBuild date:", buildDate,
+		"\nBuild commit:", buildCommit,
 	)
 
 	return err
