@@ -24,7 +24,10 @@ func (e *Encoder) Encode(data []byte) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		buf.Write(encodedData)
+		_, err = buf.Write(encodedData)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return buf.Bytes(), nil

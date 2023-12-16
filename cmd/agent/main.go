@@ -33,17 +33,23 @@ var (
 )
 
 func main() {
-	printAppInfo()
+	if err := printAppInfo(); err != nil {
+		log.Fatal(err)
+	}
 
 	if err := run(); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func printAppInfo() {
-	fmt.Println("Build version:", buildVersion)
-	fmt.Println("Build date:", buildDate)
-	fmt.Println("Build commit:", buildCommit)
+func printAppInfo() error {
+	_, err := fmt.Println(
+		"Build version:", buildVersion,
+		"Build date:", buildDate,
+		"Build commit:", buildCommit,
+	)
+
+	return err
 }
 
 func run() error {

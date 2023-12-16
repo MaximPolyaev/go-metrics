@@ -16,16 +16,19 @@ func NewCryptoDecoder(pk *rsa.PrivateKey) *Decoder {
 }
 
 func (d *Decoder) Decode(data []byte) ([]byte, error) {
-	encodedDataChunks := dataToChunks(data, d.size)
-	var decodedDataBuf bytes.Buffer
+	encodedChunks := dataToChunks(data, d.size)
+	var buf bytes.Buffer
 
-	for _, encodedDataChunk := range encodedDataChunks {
-		decodedDataChunk, err := rsa.DecryptPKCS1v15(rand.Reader, d.pk, encodedDataChunk)
+	for _, encodedChunk := range encodedChunks {
+		decryptChunk, err := rsa.DecryptPKCS1v15(rand.Reader, d.pk, encodedChunk)
 		if err != nil {
 			return nil, err
 		}
-		decodedDataBuf.Write(decodedDataChunk)
+		_, err = buf.Write(decryptChunk)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	return decodedDataBuf.Bytes(), nil
+	return buf.Bytes(), nil
 }
