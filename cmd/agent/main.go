@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/MaximPolyaev/go-metrics/internal/config"
+	"github.com/MaximPolyaev/go-metrics/internal/crypto"
 	"github.com/MaximPolyaev/go-metrics/internal/httpclient"
 	"github.com/MaximPolyaev/go-metrics/internal/logger"
 	"github.com/MaximPolyaev/go-metrics/internal/metric"
@@ -49,8 +50,14 @@ func run() error {
 	cfg := config.NewReportConfig()
 	hashCfg := config.NewHashKeyConfig()
 	rateCfg := config.NewRateConfig()
+	cryptoCfg := config.NewCryptoConfig()
 
-	if err := config.ParseCfgs([]config.Config{cfg, hashCfg, rateCfg}); err != nil {
+	if err := config.ParseCfgs([]config.Config{cfg, hashCfg, rateCfg, cryptoCfg}); err != nil {
+		return err
+	}
+
+	cryptoEncoder, err := makeCryptoEncoder(cryptoCfg)
+	if err != nil {
 		return err
 	}
 
@@ -59,7 +66,11 @@ func run() error {
 	mStats := defaultstats.New()
 	gopStats := gopsutilstats.New(lg)
 
-	httpClient := httpclient.NewHTTPClient(cfg.GetNormalizedAddress(), *hashCfg.Key)
+	httpClient := httpclient.NewHTTPClient(
+		cfg.GetNormalizedAddress(),
+		*hashCfg.Key,
+		cryptoEncoder,
+	)
 
 	chRead := make(chan Stats)
 	chReport := make(chan Stats)
@@ -92,6 +103,20 @@ func run() error {
 			close(chReport)
 		}
 	}
+}
+
+func makeCryptoEncoder(cryptoCfg *config.CryptoConfig) (*crypto.Encoder, error) {
+	if cryptoCfg.CryptoKey == nil || *cryptoCfg.CryptoKey == "" {
+		return nil, nil
+	}
+
+	publicKey, err := crypto.LoadPublicKey(*cryptoCfg.CryptoKey)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return crypto.NewCryptoEncoder(publicKey), nil
 }
 
 func computePushWorkerCount(rateLimit int) int {
