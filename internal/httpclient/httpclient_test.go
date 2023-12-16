@@ -81,7 +81,7 @@ func TestUpdateMetrics(t *testing.T) {
 	defer srv.Close()
 
 	hashKey := "hash_key"
-	client := NewHTTPClient(srv.URL, hashKey, nil)
+	client := NewHTTPClient(srv.URL, hashKey)
 
 	stats := defaultstats.New()
 
