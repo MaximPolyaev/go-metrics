@@ -12,7 +12,6 @@ import (
 	"syscall"
 
 	"github.com/MaximPolyaev/go-metrics/internal/config"
-	"github.com/MaximPolyaev/go-metrics/internal/crypto"
 	"github.com/MaximPolyaev/go-metrics/internal/db"
 	"github.com/MaximPolyaev/go-metrics/internal/handler"
 	"github.com/MaximPolyaev/go-metrics/internal/logger"
@@ -65,11 +64,6 @@ func run() error {
 	}
 	lg.Info("configs ", string(jsonConfigs))
 
-	cryptoDecoder, err := makeCryptoDecoder(*cfg.CryptoKey)
-	if err != nil {
-		return err
-	}
-
 	var dbConn *sql.DB
 
 	if *cfg.DBDsn != "" {
@@ -98,10 +92,12 @@ func run() error {
 
 	lg.Info("Start server on ", *cfg.Addr)
 
-	return http.ListenAndServe(
-		*cfg.Addr,
-		router.CreateRouter(h, lg, dbConn, *cfg.HashKey, cryptoDecoder),
-	)
+	rr, err := router.CreateRouter(h, lg, dbConn, *cfg.HashKey, *cfg.CryptoKey)
+	if err != nil {
+		return err
+	}
+
+	return http.ListenAndServe(*cfg.Addr, rr)
 }
 
 func shutdownHandler(s *metricservice.MetricService) {
@@ -115,19 +111,6 @@ func shutdownHandler(s *metricservice.MetricService) {
 
 		os.Exit(0)
 	}()
-}
-
-func makeCryptoDecoder(cryptoKey string) (*crypto.Decoder, error) {
-	if cryptoKey == "" {
-		return nil, nil
-	}
-
-	privateKey, err := crypto.LoadPrivateKey(cryptoKey)
-	if err != nil {
-		return nil, err
-	}
-
-	return crypto.NewCryptoDecoder(privateKey), nil
 }
 
 func initMetricService(
