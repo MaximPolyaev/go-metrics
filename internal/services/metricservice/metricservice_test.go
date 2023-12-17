@@ -161,35 +161,24 @@ func BenchmarkMetricService_Update(b *testing.B) {
 
 func (s mockMemStorage) Set(_ context.Context, _ metric.Type, _ metric.Metric) {}
 func (s mockMemStorage) Get(ctx context.Context, mType metric.Type, id string) (val metric.Metric, ok bool) {
-	metricMap, ok := s.GetAllByType(ctx, mType)
-	if !ok {
-		return
+	for _, m := range s.GetAll(ctx) {
+		if m.MType == mType && m.ID == id {
+			return m, true
+		}
 	}
 
-	val, ok = metricMap[id]
-
-	return
+	return metric.Metric{}, false
 }
 
-func (s mockMemStorage) GetAllByType(_ context.Context, mType metric.Type) (values map[string]metric.Metric, ok bool) {
+func (s mockMemStorage) GetAll(_ context.Context) []metric.Metric {
 	var delta int64
 	var value float64
-
 	delta = 10
 	value = 1.1
-
-	switch mType {
-	case metric.CounterType:
-		return map[string]metric.Metric{
-			"test": {ID: "test", MType: metric.CounterType, Delta: &delta},
-		}, true
-	case metric.GaugeType:
-		return map[string]metric.Metric{
-			"test": {ID: "test", MType: metric.GaugeType, Value: &value},
-		}, true
+	return []metric.Metric{
+		{ID: "test", MType: metric.CounterType, Delta: &delta},
+		{ID: "test", MType: metric.GaugeType, Value: &value},
 	}
-
-	return nil, false
 }
 
 func (s mockMemStorage) BatchSet(_ context.Context, _ []metric.Metric) {}

@@ -46,6 +46,24 @@ func (s *Storage) Get(_ context.Context, mType metric.Type, id string) (val metr
 	return
 }
 
+func (s *Storage) GetAll(_ context.Context) []metric.Metric {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	var metrics []metric.Metric
+
+	for _, mType := range metric.Types() {
+		metricMap, ok := s.values[mType]
+		if ok {
+			for _, m := range metricMap {
+				metrics = append(metrics, m)
+			}
+		}
+	}
+
+	return metrics
+}
+
 // GetAllByType - get all metrics by type from mem
 func (s *Storage) GetAllByType(_ context.Context, mType metric.Type) (values map[string]metric.Metric, ok bool) {
 	s.mu.RLock()

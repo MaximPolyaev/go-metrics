@@ -20,8 +20,8 @@ type MetricService struct {
 type metricStorage interface {
 	Set(ctx context.Context, mType metric.Type, val metric.Metric)
 	Get(ctx context.Context, mType metric.Type, id string) (val metric.Metric, ok bool)
-	GetAllByType(ctx context.Context, mType metric.Type) (values map[string]metric.Metric, ok bool)
 	BatchSet(ctx context.Context, mSlice []metric.Metric)
+	GetAll(ctx context.Context) []metric.Metric
 }
 
 type fileStorage interface {
@@ -134,20 +134,9 @@ func (s *MetricService) Get(ctx context.Context, mm *metric.Metric) (*metric.Met
 	return &existMm, true
 }
 
-// GetAll - get all metrics from storage
+// GetAll - получить все метрики из хранилища
 func (s *MetricService) GetAll(ctx context.Context) []metric.Metric {
-	var mSlice []metric.Metric
-
-	for _, mType := range metric.Types() {
-		metricMap, ok := s.mStorage.GetAllByType(ctx, mType)
-		if ok {
-			for _, m := range metricMap {
-				mSlice = append(mSlice, m)
-			}
-		}
-	}
-
-	return mSlice
+	return s.mStorage.GetAll(ctx)
 }
 
 // Sync - sync all storage metrics with file storage
