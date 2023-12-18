@@ -1,3 +1,4 @@
+// Package memstorage - пакет хранения данных в оперативной памяти
 package memstorage
 
 import (

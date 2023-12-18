@@ -1,3 +1,4 @@
+// Package hash используется для кодирования данных в sha256
 package hash
 
 import (
@@ -7,9 +8,12 @@ import (
 )
 
 // Encode - encode []byte value to hash string key
-func Encode(value []byte, key string) string {
+func Encode(value []byte, key string) (string, error) {
 	h := hmac.New(sha256.New, []byte(key))
-	h.Write(value)
 
-	return hex.EncodeToString(h.Sum(nil))
+	if _, err := h.Write(value); err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(h.Sum(nil)), nil
 }

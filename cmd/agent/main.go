@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -24,10 +25,24 @@ type Stats interface {
 	AsMetrics() []metric.Metric
 }
 
+var (
+	buildVersion string = "N/A"
+	buildDate    string = "N/A"
+	buildCommit  string = "N/A"
+)
+
 func main() {
+	printAppInfo()
+
 	if err := run(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func printAppInfo() {
+	fmt.Println("Build version:", buildVersion)
+	fmt.Println("Build date:", buildDate)
+	fmt.Println("Build commit:", buildCommit)
 }
 
 func run() error {
