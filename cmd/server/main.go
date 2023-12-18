@@ -12,6 +12,7 @@ import (
 	"syscall"
 
 	"github.com/MaximPolyaev/go-metrics/internal/config"
+	"github.com/MaximPolyaev/go-metrics/internal/crypto"
 	"github.com/MaximPolyaev/go-metrics/internal/db"
 	"github.com/MaximPolyaev/go-metrics/internal/handler"
 	"github.com/MaximPolyaev/go-metrics/internal/logger"
@@ -29,31 +30,38 @@ var (
 )
 
 func main() {
-	printAppInfo()
+	if err := printAppInfo(); err != nil {
+		log.Fatal(err)
+	}
 
 	if err := run(); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func printAppInfo() {
-	fmt.Println("Build version:", buildVersion)
-	fmt.Println("Build date:", buildDate)
-	fmt.Println("Build commit:", buildCommit)
+func printAppInfo() error {
+	_, err := fmt.Println(
+		"Build version:", buildVersion,
+		"Build date:", buildDate,
+		"Build commit:", buildCommit,
+	)
+
+	return err
 }
 
 func run() error {
 	cfg := config.NewAddressConfig()
-
 	storeCfg := config.NewStoreConfig()
 	dbConfig := config.NewDBConfig()
 	hashCfg := config.NewHashKeyConfig()
+	cryptoCfg := config.NewCryptoConfig()
 
 	configs := []config.Config{
 		cfg,
 		storeCfg,
 		dbConfig,
 		hashCfg,
+		cryptoCfg,
 	}
 	err := config.ParseCfgs(configs)
 
@@ -69,6 +77,11 @@ func run() error {
 	}
 
 	lg.Info("configs ", string(marshal))
+
+	cryptoDecoder, err := makeCryptoDecoder(cryptoCfg)
+	if err != nil {
+		return err
+	}
 
 	var dbConn *sql.DB
 
@@ -104,7 +117,7 @@ func run() error {
 
 	return http.ListenAndServe(
 		*cfg.Addr,
-		router.CreateRouter(h, lg, dbConn, hashCfg.Key),
+		router.CreateRouter(h, lg, dbConn, hashCfg.Key, cryptoDecoder),
 	)
 }
 
@@ -119,6 +132,19 @@ func shutdownHandler(s *metricservice.MetricService) {
 
 		os.Exit(0)
 	}()
+}
+
+func makeCryptoDecoder(cryptoCfg *config.CryptoConfig) (*crypto.Decoder, error) {
+	if cryptoCfg.CryptoKey == nil {
+		return nil, nil
+	}
+
+	privateKey, err := crypto.LoadPrivateKey(*cryptoCfg.CryptoKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return crypto.NewCryptoDecoder(privateKey), nil
 }
 
 func initMetricService(

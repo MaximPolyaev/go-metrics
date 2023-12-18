@@ -44,6 +44,10 @@ type RateConfig struct {
 	Limit *int `env:"RATE_LIMIT"`
 }
 
+type CryptoConfig struct {
+	CryptoKey *string `env:"CRYPTO_KEY"`
+}
+
 func NewAddressConfig() *AddressConfig {
 	return &AddressConfig{}
 }
@@ -66,6 +70,10 @@ func NewHashKeyConfig() *HashKeyConfig {
 
 func NewRateConfig() *RateConfig {
 	return &RateConfig{}
+}
+
+func NewCryptoConfig() *CryptoConfig {
+	return &CryptoConfig{}
 }
 
 // ParseCfgs - parse any configs
@@ -200,4 +208,18 @@ func (cfg *RateConfig) ConfigureFlags() {
 	}
 
 	flag.IntVar(limit, "l", 0, "rate limit")
+}
+
+func (cfg *CryptoConfig) EnvParse() error {
+	return env.Parse(cfg)
+}
+
+func (cfg *CryptoConfig) ConfigureFlags() {
+	cryptoKey := new(string)
+
+	if cfg.CryptoKey == nil {
+		cfg.CryptoKey = cryptoKey
+	}
+
+	flag.StringVar(cryptoKey, "crypto-key", "", "crypto key")
 }

@@ -30,11 +30,16 @@ type handler interface {
 	PingFunc(db *sql.DB) http.HandlerFunc
 }
 
+type CryptoDecoder interface {
+	Decode(data []byte) ([]byte, error)
+}
+
 func CreateRouter(
 	h handler,
 	log *logger.Logger,
 	db *sql.DB,
 	hashKey *string,
+	cryptoDecoder CryptoDecoder,
 ) *chi.Mux {
 	router := chi.NewRouter()
 
@@ -44,6 +49,7 @@ func CreateRouter(
 
 	router.Use(middleware.GzipMiddleware)
 	router.Use(middleware.WithLogging(log))
+	router.Use(middleware.WithDecrypt(cryptoDecoder, updatesPattern+"/"))
 	router.Use(chimiddleware.StripSlashes)
 
 	router.Post(updatePattern, h.UpdateByJSONFunc())
