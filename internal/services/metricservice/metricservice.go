@@ -13,15 +13,15 @@ import (
 type MetricService struct {
 	mStorage    metricStorage
 	fileStorage fileStorage
-	storeCfg    *config.StoreConfig
+	serverCfg   *config.ServerConfig
 	log         *logger.Logger
 }
 
 type metricStorage interface {
 	Set(ctx context.Context, mType metric.Type, val metric.Metric)
 	Get(ctx context.Context, mType metric.Type, id string) (val metric.Metric, ok bool)
-	GetAllByType(ctx context.Context, mType metric.Type) (values map[string]metric.Metric, ok bool)
 	BatchSet(ctx context.Context, mSlice []metric.Metric)
+	GetAll(ctx context.Context) []metric.Metric
 }
 
 type fileStorage interface {
@@ -32,22 +32,22 @@ type fileStorage interface {
 func New(
 	memStorage metricStorage,
 	fileStorage fileStorage,
-	storeCfg *config.StoreConfig,
+	serverCfg *config.ServerConfig,
 	log *logger.Logger,
 ) (*MetricService, error) {
 	ms := &MetricService{
 		mStorage:    memStorage,
 		fileStorage: fileStorage,
-		storeCfg:    storeCfg,
+		serverCfg:   serverCfg,
 		log:         log,
 	}
 
-	if storeCfg != nil {
+	if serverCfg != nil {
 		if err := ms.restore(); err != nil {
 			return nil, err
 		}
 
-		if *storeCfg.StoreInterval != 0 {
+		if *serverCfg.StoreInterval != 0 {
 			ms.async()
 		}
 	}
@@ -70,7 +70,7 @@ func (s *MetricService) Update(ctx context.Context, mm *metric.Metric) *metric.M
 		s.mStorage.Set(ctx, mm.MType, *mm)
 	}
 
-	if s.storeCfg != nil && *s.storeCfg.StoreInterval == 0 {
+	if s.serverCfg != nil && *s.serverCfg.StoreInterval == 0 {
 		s.Sync(context.Background())
 	}
 
@@ -134,20 +134,9 @@ func (s *MetricService) Get(ctx context.Context, mm *metric.Metric) (*metric.Met
 	return &existMm, true
 }
 
-// GetAll - get all metrics from storage
+// GetAll - получить все метрики из хранилища
 func (s *MetricService) GetAll(ctx context.Context) []metric.Metric {
-	var mSlice []metric.Metric
-
-	for _, mType := range metric.Types() {
-		metricMap, ok := s.mStorage.GetAllByType(ctx, mType)
-		if ok {
-			for _, m := range metricMap {
-				mSlice = append(mSlice, m)
-			}
-		}
-	}
-
-	return mSlice
+	return s.mStorage.GetAll(ctx)
 }
 
 // Sync - sync all storage metrics with file storage
@@ -158,7 +147,7 @@ func (s *MetricService) Sync(ctx context.Context) {
 }
 
 func (s *MetricService) async() {
-	storeInterval := time.NewTicker(time.Duration(*s.storeCfg.StoreInterval) * time.Second)
+	storeInterval := time.NewTicker(time.Duration(*s.serverCfg.StoreInterval) * time.Second)
 
 	go func() {
 		for {
@@ -172,7 +161,7 @@ func (s *MetricService) async() {
 }
 
 func (s *MetricService) restore() error {
-	if !*s.storeCfg.Restore {
+	if !*s.serverCfg.Restore {
 		return nil
 	}
 

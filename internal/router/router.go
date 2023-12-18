@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"net/http"
 
+	"github.com/MaximPolyaev/go-metrics/internal/crypto"
 	"github.com/MaximPolyaev/go-metrics/internal/logger"
 	"github.com/MaximPolyaev/go-metrics/internal/middleware"
 	"github.com/go-chi/chi/v5"
@@ -34,16 +35,27 @@ func CreateRouter(
 	h handler,
 	log *logger.Logger,
 	db *sql.DB,
-	hashKey *string,
-) *chi.Mux {
+	hashKey string,
+	cryptoKey string,
+) (*chi.Mux, error) {
 	router := chi.NewRouter()
 
-	if hashKey != nil && *hashKey != "" {
-		router.Use(middleware.WithHashing(*hashKey))
+	if hashKey != "" {
+		router.Use(middleware.WithHashing(hashKey))
 	}
 
 	router.Use(middleware.GzipMiddleware)
 	router.Use(middleware.WithLogging(log))
+
+	if cryptoKey != "" {
+		cryptoDecoder, err := makeCryptoDecoder(cryptoKey)
+		if err != nil {
+			return nil, err
+		}
+
+		router.Use(middleware.WithDecrypt(cryptoDecoder, updatesPattern+"/"))
+	}
+
 	router.Use(chimiddleware.StripSlashes)
 
 	router.Post(updatePattern, h.UpdateByJSONFunc())
@@ -56,5 +68,18 @@ func CreateRouter(
 
 	router.Get("/", h.MainFunc())
 
-	return router
+	return router, nil
+}
+
+func makeCryptoDecoder(cryptoKey string) (*crypto.Decoder, error) {
+	if cryptoKey == "" {
+		return nil, nil
+	}
+
+	privateKey, err := crypto.LoadPrivateKey(cryptoKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return crypto.NewCryptoDecoder(privateKey), nil
 }

@@ -1,6 +1,7 @@
 package handler_test
 
 import (
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -62,7 +63,10 @@ func TestHandler_UpdateFunc(t *testing.T) {
 
 	h := handler.New(&mockMetricService{})
 	lg := logger.New(os.Stdout)
-	muxRouter := router.CreateRouter(h, lg, nil, nil)
+	muxRouter, err := router.CreateRouter(h, lg, nil, "", "")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -82,7 +86,10 @@ func TestHandler_MainFunc(t *testing.T) {
 
 	h := handler.New(&mockMetricService{})
 	lg := logger.New(os.Stdout)
-	muxRouter := router.CreateRouter(h, lg, nil, nil)
+	muxRouter, err := router.CreateRouter(h, lg, nil, "", "")
+	if err != nil {
+		log.Fatal(err)
+	}
 	muxRouter.ServeHTTP(w, r)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -157,7 +164,10 @@ func TestHandler_GetValue(t *testing.T) {
 
 	h := handler.New(&mockMetricService{})
 	lg := logger.New(os.Stdout)
-	muxRouter := router.CreateRouter(h, lg, nil, nil)
+	muxRouter, err := router.CreateRouter(h, lg, nil, "", "")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
