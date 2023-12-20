@@ -12,6 +12,7 @@ import (
 	"syscall"
 
 	"github.com/MaximPolyaev/go-metrics/internal/config"
+	"github.com/MaximPolyaev/go-metrics/internal/crypto"
 	"github.com/MaximPolyaev/go-metrics/internal/db"
 	"github.com/MaximPolyaev/go-metrics/internal/handler"
 	"github.com/MaximPolyaev/go-metrics/internal/logger"
@@ -29,51 +30,50 @@ var (
 )
 
 func main() {
-	printAppInfo()
+	if err := printAppInfo(); err != nil {
+		log.Fatal(err)
+	}
 
 	if err := run(); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func printAppInfo() {
-	fmt.Println("Build version:", buildVersion)
-	fmt.Println("Build date:", buildDate)
-	fmt.Println("Build commit:", buildCommit)
+func printAppInfo() error {
+	_, err := fmt.Println(
+		"Build version:", buildVersion,
+		"\nBuild date:", buildDate,
+		"\nBuild commit:", buildCommit,
+	)
+
+	return err
 }
 
 func run() error {
-	cfg := config.NewAddressConfig()
-
-	storeCfg := config.NewStoreConfig()
-	dbConfig := config.NewDBConfig()
-	hashCfg := config.NewHashKeyConfig()
-
-	configs := []config.Config{
-		cfg,
-		storeCfg,
-		dbConfig,
-		hashCfg,
-	}
-	err := config.ParseCfgs(configs)
-
+	cfg := config.NewServerConfig()
+	err := cfg.Parse()
 	if err != nil {
 		return err
 	}
 
 	lg := logger.New(os.Stdout)
 
-	marshal, err := json.Marshal(configs)
+	var jsonConfigs []byte
+	jsonConfigs, err = json.Marshal(cfg)
+	if err != nil {
+		return err
+	}
+	lg.Info("configs ", string(jsonConfigs))
+
+	cryptoDecoder, err := makeCryptoDecoder(*cfg.CryptoKey)
 	if err != nil {
 		return err
 	}
 
-	lg.Info("configs ", string(marshal))
-
 	var dbConn *sql.DB
 
-	if *dbConfig.Dsn != "" {
-		dbConn, err = db.InitDB(*dbConfig.Dsn)
+	if *cfg.DBDsn != "" {
+		dbConn, err = db.InitDB(*cfg.DBDsn)
 		if err != nil {
 			return err
 		}
@@ -85,11 +85,7 @@ func run() error {
 		}()
 	}
 
-	metricService, err := initMetricService(
-		dbConn,
-		storeCfg,
-		lg,
-	)
+	metricService, err := initMetricService(dbConn, cfg, lg)
 	if err != nil {
 		return err
 	}
@@ -104,7 +100,7 @@ func run() error {
 
 	return http.ListenAndServe(
 		*cfg.Addr,
-		router.CreateRouter(h, lg, dbConn, hashCfg.Key),
+		router.CreateRouter(h, lg, dbConn, *cfg.HashKey, cryptoDecoder),
 	)
 }
 
@@ -121,23 +117,34 @@ func shutdownHandler(s *metricservice.MetricService) {
 	}()
 }
 
+func makeCryptoDecoder(cryptoKey string) (*crypto.Decoder, error) {
+	if cryptoKey == "" {
+		return nil, nil
+	}
+
+	privateKey, err := crypto.LoadPrivateKey(cryptoKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return crypto.NewCryptoDecoder(privateKey), nil
+}
+
 func initMetricService(
 	dbConn *sql.DB,
-	storeCfg *config.StoreConfig,
+	serverCfg *config.ServerConfig,
 	lg *logger.Logger,
 ) (*metricservice.MetricService, error) {
 	if dbConn == nil {
 		mService, err := metricservice.New(
 			memstorage.New(),
-			filestorage.New(*storeCfg.FileStoragePath),
-			storeCfg,
+			filestorage.New(*serverCfg.FileStoragePath),
+			serverCfg,
 			lg,
 		)
-
 		if err != nil {
 			return nil, err
 		}
-
 		return mService, nil
 	}
 

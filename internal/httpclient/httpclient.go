@@ -18,17 +18,23 @@ type HTTPClient struct {
 	baseURL string
 	// hashKey - Hash key for communicate server
 	hashKey string
+	encoder Encoder
+}
+
+type Encoder interface {
+	Encode(data []byte) ([]byte, error)
 }
 
 // updatesAction - action for push metrics
 const updatesAction = "/updates/"
 
 // NewHTTPClient - make new http client
-func NewHTTPClient(baseURL string, hashKey string) *HTTPClient {
+func NewHTTPClient(baseURL string, hashKey string, encoder Encoder) *HTTPClient {
 	return &HTTPClient{
 		client:  http.Client{},
 		baseURL: baseURL,
 		hashKey: hashKey,
+		encoder: encoder,
 	}
 }
 
@@ -72,6 +78,15 @@ func (c *HTTPClient) UpdateMetrics(mSlice []metric.Metric) error {
 }
 
 func (c *HTTPClient) newUpdateReq(url string, body []byte) (*http.Request, error) {
+	if c.encoder != nil {
+		var encodeErr error
+		body, encodeErr = c.encoder.Encode(body)
+
+		if encodeErr != nil {
+			return nil, encodeErr
+		}
+	}
+
 	var buf bytes.Buffer
 
 	gz := gzip.NewWriter(&buf)

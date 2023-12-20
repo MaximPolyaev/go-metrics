@@ -13,7 +13,7 @@ import (
 type MetricService struct {
 	mStorage    metricStorage
 	fileStorage fileStorage
-	storeCfg    *config.StoreConfig
+	serverCfg   *config.ServerConfig
 	log         *logger.Logger
 }
 
@@ -32,22 +32,22 @@ type fileStorage interface {
 func New(
 	memStorage metricStorage,
 	fileStorage fileStorage,
-	storeCfg *config.StoreConfig,
+	serverCfg *config.ServerConfig,
 	log *logger.Logger,
 ) (*MetricService, error) {
 	ms := &MetricService{
 		mStorage:    memStorage,
 		fileStorage: fileStorage,
-		storeCfg:    storeCfg,
+		serverCfg:   serverCfg,
 		log:         log,
 	}
 
-	if storeCfg != nil {
+	if serverCfg != nil {
 		if err := ms.restore(); err != nil {
 			return nil, err
 		}
 
-		if *storeCfg.StoreInterval != 0 {
+		if *serverCfg.StoreInterval != 0 {
 			ms.async()
 		}
 	}
@@ -70,7 +70,7 @@ func (s *MetricService) Update(ctx context.Context, mm *metric.Metric) *metric.M
 		s.mStorage.Set(ctx, mm.MType, *mm)
 	}
 
-	if s.storeCfg != nil && *s.storeCfg.StoreInterval == 0 {
+	if s.serverCfg != nil && *s.serverCfg.StoreInterval == 0 {
 		s.Sync(context.Background())
 	}
 
@@ -158,7 +158,7 @@ func (s *MetricService) Sync(ctx context.Context) {
 }
 
 func (s *MetricService) async() {
-	storeInterval := time.NewTicker(time.Duration(*s.storeCfg.StoreInterval) * time.Second)
+	storeInterval := time.NewTicker(time.Duration(*s.serverCfg.StoreInterval) * time.Second)
 
 	go func() {
 		for {
@@ -172,7 +172,7 @@ func (s *MetricService) async() {
 }
 
 func (s *MetricService) restore() error {
-	if !*s.storeCfg.Restore {
+	if !*s.serverCfg.Restore {
 		return nil
 	}
 
