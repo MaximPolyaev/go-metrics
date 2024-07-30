@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"net"
 	"net/http"
 
 	"github.com/MaximPolyaev/go-metrics/internal/hash"
@@ -19,6 +20,7 @@ type HTTPClient struct {
 	// hashKey - Hash key for communicate server
 	hashKey string
 	encoder Encoder
+	localIp string
 }
 
 type Encoder interface {
@@ -30,10 +32,12 @@ const updatesAction = "/updates/"
 
 // NewHTTPClient - make new http client
 func NewHTTPClient(baseURL string, hashKey string) *HTTPClient {
+	localIp := getLocalIP()
 	return &HTTPClient{
 		client:  http.Client{},
 		baseURL: baseURL,
 		hashKey: hashKey,
+		localIp: localIp,
 	}
 }
 
@@ -110,6 +114,10 @@ func (c *HTTPClient) newUpdateReq(url string, body []byte) (*http.Request, error
 	req.Header.Add("Accept-Encoding", "gzip")
 	req.Header.Add("Content-Encoding", "gzip")
 
+	if c.localIp != "" {
+		req.Header.Add("X-Real-IP", c.localIp)
+	}
+
 	if c.hashKey != "" {
 		encodedHash, err := hash.Encode(buf.Bytes(), c.hashKey)
 		if err != nil {
@@ -120,4 +128,19 @@ func (c *HTTPClient) newUpdateReq(url string, body []byte) (*http.Request, error
 	}
 
 	return req, nil
+}
+
+func getLocalIP() string {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return ""
+	}
+	for _, address := range addrs {
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				return ipnet.IP.String()
+			}
+		}
+	}
+	return ""
 }
