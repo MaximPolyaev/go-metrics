@@ -29,51 +29,45 @@ var (
 )
 
 func main() {
-	printAppInfo()
+	if err := printAppInfo(); err != nil {
+		log.Fatal(err)
+	}
 
 	if err := run(); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func printAppInfo() {
-	fmt.Println("Build version:", buildVersion)
-	fmt.Println("Build date:", buildDate)
-	fmt.Println("Build commit:", buildCommit)
+func printAppInfo() error {
+	_, err := fmt.Println(
+		"Build version:", buildVersion,
+		"\nBuild date:", buildDate,
+		"\nBuild commit:", buildCommit,
+	)
+
+	return err
 }
 
 func run() error {
-	cfg := config.NewAddressConfig()
-
-	storeCfg := config.NewStoreConfig()
-	dbConfig := config.NewDBConfig()
-	hashCfg := config.NewHashKeyConfig()
-
-	configs := []config.Config{
-		cfg,
-		storeCfg,
-		dbConfig,
-		hashCfg,
-	}
-	err := config.ParseCfgs(configs)
-
+	cfg := config.NewServerConfig()
+	err := cfg.Parse()
 	if err != nil {
 		return err
 	}
 
 	lg := logger.New(os.Stdout)
 
-	marshal, err := json.Marshal(configs)
+	var jsonConfigs []byte
+	jsonConfigs, err = json.Marshal(cfg)
 	if err != nil {
 		return err
 	}
-
-	lg.Info("configs ", string(marshal))
+	lg.Info("configs ", string(jsonConfigs))
 
 	var dbConn *sql.DB
 
-	if *dbConfig.Dsn != "" {
-		dbConn, err = db.InitDB(*dbConfig.Dsn)
+	if *cfg.DBDsn != "" {
+		dbConn, err = db.InitDB(*cfg.DBDsn)
 		if err != nil {
 			return err
 		}
@@ -85,11 +79,7 @@ func run() error {
 		}()
 	}
 
-	metricService, err := initMetricService(
-		dbConn,
-		storeCfg,
-		lg,
-	)
+	metricService, err := initMetricService(dbConn, cfg, lg)
 	if err != nil {
 		return err
 	}
@@ -102,15 +92,17 @@ func run() error {
 
 	lg.Info("Start server on ", *cfg.Addr)
 
-	return http.ListenAndServe(
-		*cfg.Addr,
-		router.CreateRouter(h, lg, dbConn, hashCfg.Key),
-	)
+	rr, err := router.CreateRouter(h, lg, dbConn, *cfg.HashKey, *cfg.CryptoKey)
+	if err != nil {
+		return err
+	}
+
+	return http.ListenAndServe(*cfg.Addr, rr)
 }
 
 func shutdownHandler(s *metricservice.MetricService) {
 	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
 	go func() {
 		<-sigs
@@ -123,21 +115,19 @@ func shutdownHandler(s *metricservice.MetricService) {
 
 func initMetricService(
 	dbConn *sql.DB,
-	storeCfg *config.StoreConfig,
+	serverCfg *config.ServerConfig,
 	lg *logger.Logger,
 ) (*metricservice.MetricService, error) {
 	if dbConn == nil {
 		mService, err := metricservice.New(
 			memstorage.New(),
-			filestorage.New(*storeCfg.FileStoragePath),
-			storeCfg,
+			filestorage.New(*serverCfg.FileStoragePath),
+			serverCfg,
 			lg,
 		)
-
 		if err != nil {
 			return nil, err
 		}
-
 		return mService, nil
 	}
 

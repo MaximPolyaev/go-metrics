@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/MaximPolyaev/go-metrics/internal/config"
+	"github.com/MaximPolyaev/go-metrics/internal/crypto"
 	"github.com/MaximPolyaev/go-metrics/internal/httpclient"
 	"github.com/MaximPolyaev/go-metrics/internal/logger"
 	"github.com/MaximPolyaev/go-metrics/internal/metric"
@@ -32,25 +33,33 @@ var (
 )
 
 func main() {
-	printAppInfo()
+	if err := printAppInfo(); err != nil {
+		log.Fatal(err)
+	}
 
 	if err := run(); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func printAppInfo() {
-	fmt.Println("Build version:", buildVersion)
-	fmt.Println("Build date:", buildDate)
-	fmt.Println("Build commit:", buildCommit)
+func printAppInfo() error {
+	_, err := fmt.Println(
+		"Build version:", buildVersion,
+		"\nBuild date:", buildDate,
+		"\nBuild commit:", buildCommit,
+	)
+
+	return err
 }
 
 func run() error {
-	cfg := config.NewReportConfig()
-	hashCfg := config.NewHashKeyConfig()
-	rateCfg := config.NewRateConfig()
+	cfg := config.NewAgentConfig()
+	if err := cfg.Parse(); err != nil {
+		return err
+	}
 
-	if err := config.ParseCfgs([]config.Config{cfg, hashCfg, rateCfg}); err != nil {
+	cryptoEncoder, err := makeCryptoEncoder(*cfg.CryptoKey)
+	if err != nil {
 		return err
 	}
 
@@ -59,7 +68,14 @@ func run() error {
 	mStats := defaultstats.New()
 	gopStats := gopsutilstats.New(lg)
 
-	httpClient := httpclient.NewHTTPClient(cfg.GetNormalizedAddress(), *hashCfg.Key)
+	httpClient := httpclient.NewHTTPClient(
+		cfg.GetNormalizedAddress(),
+		*cfg.HashKey,
+	)
+
+	if cryptoEncoder != nil {
+		httpClient.WithCryptoEncoder(cryptoEncoder)
+	}
 
 	chRead := make(chan Stats)
 	chReport := make(chan Stats)
@@ -71,7 +87,7 @@ func run() error {
 		go readStats(chRead)
 	}
 
-	pushRate := computePushWorkerCount(*rateCfg.Limit)
+	pushRate := computePushWorkerCount(*cfg.RateLimit)
 
 	for w := 0; w < pushRate; w++ {
 		go updateMetrics(httpClient, chReport, lg)
@@ -92,6 +108,20 @@ func run() error {
 			close(chReport)
 		}
 	}
+}
+
+func makeCryptoEncoder(cryptoKey string) (*crypto.Encoder, error) {
+	if cryptoKey == "" {
+		return nil, nil
+	}
+
+	publicKey, err := crypto.LoadPublicKey(cryptoKey)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return crypto.NewCryptoEncoder(publicKey), nil
 }
 
 func computePushWorkerCount(rateLimit int) int {
@@ -128,7 +158,7 @@ func updateMetrics(httpClient *httpclient.HTTPClient, chS <-chan Stats, lg *logg
 
 func shutdownHandler(cancelFunc context.CancelFunc) {
 	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
 	go func() {
 		<-sigs

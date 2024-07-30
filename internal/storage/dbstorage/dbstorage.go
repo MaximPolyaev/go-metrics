@@ -91,13 +91,13 @@ func (s *Storage) Get(ctx context.Context, mType metric.Type, id string) (val me
 	return val, true
 }
 
-// GetAllByType - get all metrics from DB
-func (s *Storage) GetAllByType(ctx context.Context, mType metric.Type) (values map[string]metric.Metric, ok bool) {
+// GetAll - получить все метрики
+func (s *Storage) GetAll(ctx context.Context) []metric.Metric {
 	ctx, cancel := context.WithTimeout(ctx, timeoutReqs)
 	defer cancel()
 
-	query := `SELECT id, delta, value FROM metrics WHERE type = $1`
-	rows, err := s.db.QueryContext(ctx, query, mType.ToString())
+	query := `SELECT id, delta, value, type FROM metrics`
+	rows, err := s.db.QueryContext(ctx, query)
 	defer func() {
 		closeErr := rows.Close()
 		if closeErr != nil {
@@ -108,51 +108,49 @@ func (s *Storage) GetAllByType(ctx context.Context, mType metric.Type) (values m
 	if err != nil {
 		s.log.Error(err)
 
-		return
+		return nil
 	}
 
-	tmpValues := make(map[string]metric.Metric)
-
+	var metrics []metric.Metric
 	for rows.Next() {
 		var mDelta sql.NullInt64
 		var mValue sql.NullFloat64
 		var id string
+		var mType metric.Type
 
-		err := rows.Scan(&id, &mDelta, &mValue)
+		err := rows.Scan(&id, &mDelta, &mValue, &mType)
 
 		if err != nil {
 			s.log.Error(err)
 
-			return
+			return nil
 		}
 
-		val := metric.Metric{
+		m := metric.Metric{
 			ID:    id,
 			MType: mType,
 		}
 
 		if mDelta.Valid {
-			val.Delta = new(int64)
-			*val.Delta = mDelta.Int64
+			m.Delta = new(int64)
+			*m.Delta = mDelta.Int64
 		}
 
 		if mValue.Valid {
-			val.Value = new(float64)
-			*val.Value = mValue.Float64
+			m.Value = new(float64)
+			*m.Value = mValue.Float64
 		}
 
-		tmpValues[id] = val
+		metrics = append(metrics, m)
 	}
 
 	if err := rows.Err(); err != nil {
 		s.log.Error(err)
 
-		return
+		return nil
 	}
 
-	values = tmpValues
-
-	return values, true
+	return metrics
 }
 
 func (s *Storage) setHandler(ctx context.Context, mType metric.Type, val metric.Metric) func() error {

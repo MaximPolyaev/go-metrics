@@ -18,6 +18,11 @@ type HTTPClient struct {
 	baseURL string
 	// hashKey - Hash key for communicate server
 	hashKey string
+	encoder Encoder
+}
+
+type Encoder interface {
+	Encode(data []byte) ([]byte, error)
 }
 
 // updatesAction - action for push metrics
@@ -30,6 +35,10 @@ func NewHTTPClient(baseURL string, hashKey string) *HTTPClient {
 		baseURL: baseURL,
 		hashKey: hashKey,
 	}
+}
+
+func (c *HTTPClient) WithCryptoEncoder(encoder Encoder) {
+	c.encoder = encoder
 }
 
 // UpdateMetrics - push metrics to server for update
@@ -72,6 +81,15 @@ func (c *HTTPClient) UpdateMetrics(mSlice []metric.Metric) error {
 }
 
 func (c *HTTPClient) newUpdateReq(url string, body []byte) (*http.Request, error) {
+	if c.encoder != nil {
+		var encodeErr error
+		body, encodeErr = c.encoder.Encode(body)
+
+		if encodeErr != nil {
+			return nil, encodeErr
+		}
+	}
+
 	var buf bytes.Buffer
 
 	gz := gzip.NewWriter(&buf)
