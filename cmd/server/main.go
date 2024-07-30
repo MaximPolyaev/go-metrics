@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -57,12 +56,21 @@ func run() error {
 
 	lg := logger.New(os.Stdout)
 
-	var jsonConfigs []byte
-	jsonConfigs, err = json.Marshal(cfg)
-	if err != nil {
-		return err
+	cfgLog := lg.WithField("addr", *cfg.Addr).
+		WithField("store_interval", *cfg.StoreInterval).
+		WithField("file_storage_path", *cfg.FileStoragePath).
+		WithField("restore", *cfg.Restore).
+		WithField("db_dsn", *cfg.DBDsn).
+		WithField("hash_key", *cfg.HashKey).
+		WithField("crypto_Key", *cfg.CryptoKey).
+		WithField("json_config", *cfg.JSONConfig)
+
+	subnet := cfg.TrustedSubnetAsIpNet()
+	if subnet != nil {
+		cfgLog = cfgLog.WithField("trusted_subnet", subnet)
 	}
-	lg.Info("configs ", string(jsonConfigs))
+
+	cfgLog.Info("server config")
 
 	var dbConn *sql.DB
 
@@ -92,7 +100,7 @@ func run() error {
 
 	lg.Info("Start server on ", *cfg.Addr)
 
-	rr, err := router.CreateRouter(h, lg, dbConn, *cfg.HashKey, *cfg.CryptoKey)
+	rr, err := router.CreateRouter(h, lg, dbConn, *cfg.HashKey, *cfg.CryptoKey, subnet)
 	if err != nil {
 		return err
 	}

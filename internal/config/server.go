@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"flag"
+	"net"
 	"os"
 
 	"github.com/caarlos0/env/v9"
@@ -27,6 +28,23 @@ type ServerConfig struct {
 	HashKey         *string `env:"KEY"`
 	CryptoKey       *string `env:"CRYPTO_KEY"`
 	JSONConfig      *string `env:"CONFIG"`
+	TrustedSubnet   *Subnet `env:"TRUSTED_SUBNET"`
+}
+
+type Subnet net.IPNet
+
+func (s *Subnet) UnmarshalText(text []byte) error {
+	return s.UnmarshalString(string(text))
+}
+
+func (s *Subnet) UnmarshalString(str string) error {
+	_, subnet, parseErr := net.ParseCIDR(str)
+	if parseErr != nil {
+		return parseErr
+	}
+
+	*s = Subnet(*subnet)
+	return nil
 }
 
 func NewServerConfig() *ServerConfig {
@@ -46,6 +64,7 @@ func (cfg *ServerConfig) Parse() error {
 	hashKey := new(string)
 	cryptoKey := new(string)
 	jsonConfig := new(string)
+	trustedSubnet := new(string)
 
 	if cfg.Addr == nil {
 		cfg.Addr = addr
@@ -81,8 +100,17 @@ func (cfg *ServerConfig) Parse() error {
 	flag.StringVar(cryptoKey, "crypto-key", defaultServerCryptoKey, "crypto key")
 	flag.StringVar(jsonConfig, "c", "", "json config")
 	flag.StringVar(jsonConfig, "config", "", "json config")
+	flag.StringVar(trustedSubnet, "t", "", "trusted subnet")
 
 	flag.Parse()
+
+	if cfg.TrustedSubnet == nil && *trustedSubnet != "" {
+		cfg.TrustedSubnet = new(Subnet)
+		err := cfg.TrustedSubnet.UnmarshalString(*trustedSubnet)
+		if err != nil {
+			return err
+		}
+	}
 
 	if *cfg.JSONConfig != "" {
 		jsonConfigData, err := os.ReadFile(*cfg.JSONConfig)
@@ -127,9 +155,24 @@ func (cfg *ServerConfig) Parse() error {
 						*cfg.StoreInterval = uint(interval)
 					}
 				}
+			case "trusted_subnet":
+				if val, ok := cfgValue.(string); ok && cfg.TrustedSubnet == nil {
+					cfg.TrustedSubnet = new(Subnet)
+					unmarshalErr := cfg.TrustedSubnet.UnmarshalString(val)
+					if unmarshalErr != nil {
+						return unmarshalErr
+					}
+				}
 			}
 		}
 	}
 
 	return nil
+}
+
+func (cfg *ServerConfig) TrustedSubnetAsIpNet() *net.IPNet {
+	if cfg.TrustedSubnet == nil {
+		return nil
+	}
+	return (*net.IPNet)(cfg.TrustedSubnet)
 }

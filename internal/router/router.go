@@ -3,6 +3,7 @@ package router
 
 import (
 	"database/sql"
+	"net"
 	"net/http"
 
 	"github.com/MaximPolyaev/go-metrics/internal/crypto"
@@ -37,8 +38,13 @@ func CreateRouter(
 	db *sql.DB,
 	hashKey string,
 	cryptoKey string,
+	subnet *net.IPNet,
 ) (*chi.Mux, error) {
 	router := chi.NewRouter()
+
+	if subnet != nil {
+		router.Use(middleware.WithCheckSubnet(subnet))
+	}
 
 	if hashKey != "" {
 		router.Use(middleware.WithHashing(hashKey))
